@@ -226,14 +226,6 @@ pipeline {
         // STAGE 5: PUSH TO ECR
         // ============================================
         stage('Push to ECR') {
-            when {
-                anyOf {
-                    branch 'main'
-                    branch 'develop'
-                    branch 'staging'
-                    expression { return env.GIT_BRANCH_NAME ==~ /release\/.*/ }
-                }
-            }
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
                     script {
@@ -265,13 +257,6 @@ pipeline {
         // ArgoCD will auto-sync from these changes
         // ============================================
         stage('Update K8s Manifests') {
-            when {
-                anyOf {
-                    branch 'main'
-                    branch 'develop'
-                    branch 'staging'
-                }
-            }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
                     script {
