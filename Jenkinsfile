@@ -108,9 +108,8 @@ pipeline {
                         // Login to ECR using AWS CLI Docker image (no awscli required in Jenkins container)
                         sh """
                             docker run --rm \\
-                                -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
-                                -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
-                                -e AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN} \\
+                                -e AWS_ACCESS_KEY_ID=${env.AWS_ACCESS_KEY_ID} \\
+                                -e AWS_SECRET_ACCESS_KEY=${env.AWS_SECRET_ACCESS_KEY} \\
                                 -e AWS_DEFAULT_REGION=${AWS_REGION} \\
                                 amazon/aws-cli ecr get-login-password --region ${AWS_REGION} | \\
                                 docker login --username AWS --password-stdin ${ECR_REGISTRY}
@@ -234,9 +233,8 @@ pipeline {
                     script {
                         sh """
                             docker run --rm \\
-                                -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
-                                -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
-                                -e AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN} \\
+                                -e AWS_ACCESS_KEY_ID=${env.AWS_ACCESS_KEY_ID} \\
+                                -e AWS_SECRET_ACCESS_KEY=${env.AWS_SECRET_ACCESS_KEY} \\
                                 -e AWS_DEFAULT_REGION=${AWS_REGION} \\
                                 amazon/aws-cli ecr get-login-password --region ${AWS_REGION} | \\
                                 docker login --username AWS --password-stdin ${ECR_REGISTRY}
@@ -324,7 +322,6 @@ pipeline {
                     docker image prune -f || true
                 """
             }
-            cleanWs()
         }
         success {
             echo """
