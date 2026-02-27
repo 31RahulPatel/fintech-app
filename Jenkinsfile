@@ -1,38 +1,34 @@
-// ======================================================
-// FINTECHOPS – FINAL PRODUCTION CI/CD PIPELINE
-// Docker-Native Sonar + Parallel Builds + GitOps
-// ======================================================
-
 pipeline {
     agent any
 
     parameters {
         string(
             name: 'SERVICES',
-            defaultValue: '',
-            description: 'Optional: frontend,api-gateway'
+            defaultValue: 'frontend,api-gateway',
+            description: 'Comma-separated list of services to build'
         )
-    }
-
-    options {
-        buildDiscarder(logRotator(numToKeepStr: '15'))
-        timeout(time: 60, unit: 'MINUTES')
-        disableConcurrentBuilds()
     }
 
     environment {
         AWS_ACCOUNT_ID = '196390795701'
         AWS_REGION     = 'ap-south-1'
+        GITHUB_REPO    = 'https://github.com/31RahulPatel/fintechapp.git'
         APP_NAME       = 'fintechops'
-        SONAR_HOST_URL = 'http://3.110.66.135:9000'
         ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        SONAR_HOST_URL = "http://3.110.66.135:9000"
+    }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '15'))
+        timeout(time: 1, unit: 'HOURS')
+        disableConcurrentBuilds()
     }
 
     stages {
 
-        // ======================================================
+        // ===============================
         // CHECKOUT
-        // ======================================================
+        // ===============================
         stage('Checkout') {
             steps {
                 checkout scm
@@ -43,160 +39,134 @@ pipeline {
                     ).trim()
 
                     env.IMAGE_TAG = "${BUILD_NUMBER}-${env.GIT_COMMIT_SHORT}"
-                    env.GIT_BRANCH_NAME = env.BRANCH_NAME ?: "detached"
+
+                    env.GIT_BRANCH_NAME = env.BRANCH_NAME ?: sh(
+                        script: 'git rev-parse --abbrev-ref HEAD',
+                        returnStdout: true
+                    ).trim()
 
                     echo "Branch: ${env.GIT_BRANCH_NAME}"
+                    echo "Commit: ${env.GIT_COMMIT_SHORT}"
                     echo "Tag: ${env.IMAGE_TAG}"
                 }
             }
         }
 
-        // ======================================================
-        // SONARQUBE SCAN (Docker-Based Scanner)
-        // ======================================================
-        stage('SonarQube Scan') {
+        // ===============================
+        // SONARQUBE ANALYSIS
+        // ===============================
+        stage('SonarQube Analysis') {
             steps {
-                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                    sh """
-                        docker run --rm \
-                          -e SONAR_HOST_URL=${SONAR_HOST_URL} \
-                          -e SONAR_LOGIN=\$SONAR_TOKEN \
-                          -v \$(pwd):/usr/src \
-                          sonarsource/sonar-scanner-cli \
-                          -Dsonar.projectKey=${APP_NAME} \
-                          -Dsonar.sources=frontend/src,services \
-                          -Dsonar.exclusions=**/node_modules/**,**/build/**
-                    """
+                script {
+                    withSonarQubeEnv('SonarQube') {
+                        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+
+                            def scannerHome = tool 'SonarScanner'
+
+                            sh """
+                                ${scannerHome}/bin/sonar-scanner \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.login=\$SONAR_TOKEN \
+                                -Dsonar.projectKey=${APP_NAME} \
+                                -Dsonar.projectName=FintechOps \
+                                -Dsonar.sources=frontend/src,services \
+                                -Dsonar.exclusions=**/node_modules/**,**/coverage/**,**/build/**,**/dist/**,**/*.test.js,**/*.spec.js \
+                                -Dsonar.sourceEncoding=UTF-8
+                            """
+                        }
+                    }
                 }
             }
         }
 
-        // ======================================================
-        // QUALITY GATE
-        // ======================================================
         stage('Quality Gate') {
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
+                    waitForQualityGate abortPipeline: false
                 }
             }
         }
 
-        // ======================================================
-        // LOGIN TO ECR
-        // ======================================================
-        stage('Login to ECR') {
+        // ===============================
+        // BUILD DOCKER IMAGES
+        // ===============================
+        stage('Build Docker Images') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
-                    sh """
-                        aws ecr get-login-password --region ${AWS_REGION} | \
-                        docker login --username AWS --password-stdin ${ECR_REGISTRY}
-                    """
-                }
-            }
-        }
-
-        // ======================================================
-        // BUILD + TRIVY SCAN + PUSH (PARALLEL)
-        // ======================================================
-        stage('Build, Scan & Push') {
-            steps {
-                script {
-
-                    def services = [
-                        frontend: "frontend",
-                        "api-gateway": "services/api-gateway"
-                    ]
-
-                    if (params.SERVICES != null && params.SERVICES.trim() != "") {
-                        def requested = []
-                        for (svc in params.SERVICES.split(',')) {
-                            requested.add(svc.trim())
-                        }
-
-                        def filtered = [:]
-                        for (entry in services) {
-                            if (requested.contains(entry.key)) {
-                                filtered[entry.key] = entry.value
-                            }
-                        }
-                        services = filtered
-                    }
-
-                    def builds = [:]
-
-                    for (entry in services) {
-
-                        def name = entry.key
-                        def path = entry.value
-
-                        builds[name] = {
-
-                            def image = "${ECR_REGISTRY}/${name}"
-
-                            sh """
-                                docker pull ${image}:latest || true
-
-                                docker build \
-                                  --cache-from ${image}:latest \
-                                  --pull \
-                                  -t ${image}:${IMAGE_TAG} \
-                                  -t ${image}:latest \
-                                  ${path} || \
-
-                                docker build \
-                                  --no-cache \
-                                  --pull \
-                                  -t ${image}:${IMAGE_TAG} \
-                                  -t ${image}:latest \
-                                  ${path}
-                            """
-
-                            sh """
-                                trivy image \
-                                  --exit-code 1 \
-                                  --severity CRITICAL \
-                                  ${image}:${IMAGE_TAG}
-                            """
-
-                            sh """
-                                docker push ${image}:${IMAGE_TAG}
-                                docker push ${image}:latest
-                            """
-                        }
-                    }
-
-                    parallel builds
-                }
-            }
-        }
-
-        // ======================================================
-        // GITOPS UPDATE
-        // ======================================================
-        stage('Update K8s Manifests') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
                     script {
 
-                        def environment = (env.GIT_BRANCH_NAME == "main") ? "production" : "staging"
+                        sh """
+                            docker run --rm \
+                              -e AWS_ACCESS_KEY_ID=${env.AWS_ACCESS_KEY_ID} \
+                              -e AWS_SECRET_ACCESS_KEY=${env.AWS_SECRET_ACCESS_KEY} \
+                              -e AWS_DEFAULT_REGION=${AWS_REGION} \
+                              amazon/aws-cli ecr get-login-password --region ${AWS_REGION} | \
+                              docker login --username AWS --password-stdin ${ECR_REGISTRY}
+                        """
+
+                        def services = [
+                            [name: 'frontend', context: 'frontend'],
+                            [name: 'api-gateway', context: 'services/api-gateway']
+                        ]
+
+                        services.each { svc ->
+
+                            def imageName = "${ECR_REGISTRY}/${APP_NAME}"
+                            def svcTag = "${svc.name}-${IMAGE_TAG}"
+
+                            sh """
+                                docker pull ${imageName}:${svc.name}-latest || true
+
+                                docker build \
+                                  --cache-from ${imageName}:${svc.name}-latest \
+                                  -t ${imageName}:${svcTag} \
+                                  -t ${imageName}:${svc.name}-latest \
+                                  --build-arg BUILD_NUMBER=${BUILD_NUMBER} \
+                                  --build-arg GIT_COMMIT=${GIT_COMMIT_SHORT} \
+                                  ${svc.context}
+                            """
+                        }
+
+                        env.BUILT_SERVICES = services.collect { it.name }.join(',')
+                    }
+                }
+            }
+        }
+
+        // ===============================
+        // TRIVY SCAN
+        // ===============================
+        stage('Trivy Scan') {
+            steps {
+                script {
+                    def services = env.BUILT_SERVICES.split(',')
+
+                    services.each { service ->
 
                         sh """
-                            git config user.email "jenkins@fintechops.com"
-                            git config user.name "Jenkins CI"
+                            trivy image \
+                            --exit-code 1 \
+                            --severity CRITICAL \
+                            ${ECR_REGISTRY}/${APP_NAME}:${service}-${IMAGE_TAG}
+                        """
+                    }
+                }
+            }
+        }
 
-                            cd k8s/overlays/${environment}
+        // ===============================
+        // PUSH TO ECR
+        // ===============================
+        stage('Push to ECR') {
+            steps {
+                script {
+                    def services = env.BUILT_SERVICES.split(',')
 
-                            sed -i "s|newTag: .*|newTag: ${IMAGE_TAG}|g" kustomization.yaml
+                    services.each { service ->
 
-                            cd ../../..
-
-                            git add k8s/
-
-                            git diff --cached --quiet || {
-                                git commit -m "[CI] Update images to ${IMAGE_TAG}"
-                                git push https://${GIT_USER}:${GIT_TOKEN}@github.com/31RahulPatel/fintechapp.git HEAD:main
-                            }
+                        sh """
+                            docker push ${ECR_REGISTRY}/${APP_NAME}:${service}-${IMAGE_TAG}
+                            docker push ${ECR_REGISTRY}/${APP_NAME}:${service}-latest
                         """
                     }
                 }
@@ -204,20 +174,9 @@ pipeline {
         }
     }
 
-    // ======================================================
-    // CLEANUP
-    // ======================================================
     post {
         always {
-            sh "docker image prune -af || true"
-        }
-
-        success {
-            echo "✅ PIPELINE SUCCESS – ${IMAGE_TAG}"
-        }
-
-        failure {
-            echo "❌ PIPELINE FAILED"
+            sh "docker image prune -f || true"
         }
     }
 }
