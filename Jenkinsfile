@@ -105,8 +105,16 @@ pipeline {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
                     script {
-                        // Login to ECR
-                        sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}"
+                        // Login to ECR using AWS CLI Docker image (no awscli required in Jenkins container)
+                        sh """
+                            docker run --rm \\
+                                -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
+                                -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
+                                -e AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN} \\
+                                -e AWS_DEFAULT_REGION=${AWS_REGION} \\
+                                amazon/aws-cli ecr get-login-password --region ${AWS_REGION} | \\
+                                docker login --username AWS --password-stdin ${ECR_REGISTRY}
+                        """
 
                         def allServices = [
                             [name: 'frontend',            context: 'frontend'],
@@ -224,7 +232,15 @@ pipeline {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
                     script {
-                        sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}"
+                        sh """
+                            docker run --rm \\
+                                -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \\
+                                -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \\
+                                -e AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN} \\
+                                -e AWS_DEFAULT_REGION=${AWS_REGION} \\
+                                amazon/aws-cli ecr get-login-password --region ${AWS_REGION} | \\
+                                docker login --username AWS --password-stdin ${ECR_REGISTRY}
+                        """
 
                         def services = env.BUILT_SERVICES.split(',')
                         services.each { service ->
