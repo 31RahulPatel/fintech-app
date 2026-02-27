@@ -1,0 +1,80 @@
+# ============================================
+# ArgoCD Application Manifests
+# ============================================
+# These define what ArgoCD watches and auto-syncs to EKS
+# Apply with: kubectl apply -f k8s/argocd-apps.yaml
+#
+# IMPORTANT: Replace <YOUR_GITHUB_REPO_URL> with your actual repo URL
+# ============================================
+
+# ---- STAGING ----
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: fintechops-staging
+  namespace: argocd
+  labels:
+    app: fintechops
+    environment: staging
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: <YOUR_GITHUB_REPO_URL>
+    targetRevision: develop
+    path: k8s/overlays/staging
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: fintechops-staging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+---
+# ---- PRODUCTION ----
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: fintechops-production
+  namespace: argocd
+  labels:
+    app: fintechops
+    environment: production
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: <YOUR_GITHUB_REPO_URL>
+    targetRevision: main
+    path: k8s/overlays/production
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: fintechops-production
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

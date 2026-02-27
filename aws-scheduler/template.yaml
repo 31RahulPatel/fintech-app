@@ -1,0 +1,327 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: FintechOps Scheduled Prompts - Serverless Architecture
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: nodejs18.x
+    MemorySize: 256
+    Environment:
+      Variables:
+        DYNAMODB_TABLE: !Ref ScheduledPromptsTable
+        GROQ_API_KEY: !Ref GroqApiKey
+        SES_FROM_EMAIL: !Ref SesFromEmail
+        FRONTEND_URL: !Ref FrontendUrl
+
+Parameters:
+  Environment:
+    Type: String
+    Description: Deployment environment
+    Default: dev
+    AllowedValues:
+      - dev
+      - prod
+  GroqApiKey:
+    Type: String
+    Description: Groq API Key for AI responses
+    NoEcho: true
+  CognitoUserPoolId:
+    Type: String
+    Description: Cognito User Pool ID for authentication
+    Default: us-east-1_7MvJkbZ7M
+  CognitoUserPoolArn:
+    Type: String
+    Description: Cognito User Pool ARN
+    Default: ''
+  SesFromEmail:
+    Type: String
+    Description: Verified SES email address for sending emails
+    Default: noreply@fintechops.com
+  FrontendUrl:
+    Type: String
+    Description: Frontend URL for CORS
+    Default: http://localhost
+
+Resources:
+  # ==================== DynamoDB Tables ====================
+  
+  ScheduledPromptsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: fintechops-scheduled-prompts
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+        - AttributeName: GSI1PK
+          AttributeType: S
+        - AttributeName: GSI1SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1
+          KeySchema:
+            - AttributeName: GSI1PK
+              KeyType: HASH
+            - AttributeName: GSI1SK
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+  # ==================== EventBridge Scheduler Group ====================
+  
+  SchedulerGroup:
+    Type: AWS::Scheduler::ScheduleGroup
+    Properties:
+      Name: fintechops-schedules
+
+  # ==================== API Gateway ====================
+  
+  SchedulerApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: fintechops-scheduler-api
+      StageName: prod
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization,X-User-Id,X-User-Email'"
+        AllowOrigin: "'*'"
+        AllowCredentials: false
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        AddDefaultAuthorizerToCorsPreflight: false
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPoolId}'
+      GatewayResponses:
+        DEFAULT_4XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"
+              Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+        DEFAULT_5XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"
+              Access-Control-Allow-Headers: "'Content-Type,Authorization'"
+
+  # ==================== Lambda Functions ====================
+
+  # Create Schedule
+  CreateScheduleFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: fintechops-create-schedule
+      CodeUri: lambda/create-schedule/
+      Handler: index.handler
+      Environment:
+        Variables:
+          EXECUTE_LAMBDA_ARN: !GetAtt ExecutePromptFunction.Arn
+          SCHEDULER_ROLE_ARN: !GetAtt SchedulerExecutionRole.Arn
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ScheduledPromptsTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - scheduler:CreateSchedule
+                - scheduler:DeleteSchedule
+                - iam:PassRole
+              Resource: '*'
+      Events:
+        CreateSchedule:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SchedulerApi
+            Path: /schedules
+            Method: POST
+
+  # Get Schedules
+  GetSchedulesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: fintechops-get-schedules
+      CodeUri: lambda/get-schedules/
+      Handler: index.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ScheduledPromptsTable
+      Events:
+        GetSchedules:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SchedulerApi
+            Path: /schedules
+            Method: GET
+
+  # Update Schedule
+  UpdateScheduleFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: fintechops-update-schedule
+      CodeUri: lambda/update-schedule/
+      Handler: index.handler
+      Environment:
+        Variables:
+          EXECUTE_LAMBDA_ARN: !GetAtt ExecutePromptFunction.Arn
+          SCHEDULER_ROLE_ARN: !GetAtt SchedulerExecutionRole.Arn
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ScheduledPromptsTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - scheduler:UpdateSchedule
+                - scheduler:DeleteSchedule
+                - scheduler:CreateSchedule
+                - iam:PassRole
+              Resource: '*'
+      Events:
+        UpdateSchedule:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SchedulerApi
+            Path: /schedules/{scheduleId}
+            Method: PUT
+
+  # Delete Schedule
+  DeleteScheduleFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: fintechops-delete-schedule
+      CodeUri: lambda/delete-schedule/
+      Handler: index.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ScheduledPromptsTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - scheduler:DeleteSchedule
+              Resource: '*'
+      Events:
+        DeleteSchedule:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SchedulerApi
+            Path: /schedules/{scheduleId}
+            Method: DELETE
+
+  # Toggle Schedule
+  ToggleScheduleFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: fintechops-toggle-schedule
+      CodeUri: lambda/toggle-schedule/
+      Handler: index.handler
+      Environment:
+        Variables:
+          EXECUTE_LAMBDA_ARN: !GetAtt ExecutePromptFunction.Arn
+          SCHEDULER_ROLE_ARN: !GetAtt SchedulerExecutionRole.Arn
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ScheduledPromptsTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - scheduler:UpdateSchedule
+                - scheduler:DeleteSchedule
+                - scheduler:CreateSchedule
+                - iam:PassRole
+              Resource: '*'
+      Events:
+        ToggleSchedule:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SchedulerApi
+            Path: /schedules/{scheduleId}/toggle
+            Method: POST
+
+  # Get Schedule Results
+  GetResultsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: fintechops-get-results
+      CodeUri: lambda/get-results/
+      Handler: index.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ScheduledPromptsTable
+      Events:
+        GetResults:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SchedulerApi
+            Path: /schedules/{scheduleId}/results
+            Method: GET
+
+  # Execute Scheduled Prompt (triggered by EventBridge)
+  ExecutePromptFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: fintechops-execute-prompt
+      CodeUri: lambda/execute-prompt/
+      Handler: index.handler
+      Timeout: 60
+      MemorySize: 512
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ScheduledPromptsTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ses:SendEmail
+                - ses:SendRawEmail
+              Resource: '*'
+
+  # ==================== IAM Role for EventBridge Scheduler ====================
+  
+  SchedulerExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: fintechops-scheduler-execution-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: scheduler.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeLambda
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: !GetAtt ExecutePromptFunction.Arn
+
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub 'https://${SchedulerApi}.execute-api.${AWS::Region}.amazonaws.com/prod'
+  
+  ScheduledPromptsTableName:
+    Description: DynamoDB Table Name
+    Value: !Ref ScheduledPromptsTable
+  
+  ExecutePromptFunctionArn:
+    Description: Execute Prompt Lambda ARN (for EventBridge)
+    Value: !GetAtt ExecutePromptFunction.Arn
+  
+  SchedulerExecutionRoleArn:
+    Description: Scheduler Execution Role ARN
+    Value: !GetAtt SchedulerExecutionRole.Arn

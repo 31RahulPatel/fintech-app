@@ -1,0 +1,140 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Kubernetes API server
+  - job_name: 'kubernetes-apiservers'
+    kubernetes_sd_configs:
+      - role: endpoints
+    scheme: https
+    tls_config:
+      ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+        action: keep
+        regex: default;kubernetes;https
+
+  # Kubernetes nodes
+  - job_name: 'kubernetes-nodes'
+    kubernetes_sd_configs:
+      - role: node
+    scheme: https
+    tls_config:
+      ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    relabel_configs:
+      - action: labelmap
+        regex: __meta_kubernetes_node_label_(.+)
+
+  # Kubernetes pods
+  - job_name: 'kubernetes-pods'
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+        action: replace
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+        target_label: __address__
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(.+)
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: kubernetes_namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: kubernetes_pod_name
+
+  # FintechOps Services
+  - job_name: 'fintechops-api-gateway'
+    static_configs:
+      - targets: ['api-gateway:3000']
+    metrics_path: /metrics
+
+  - job_name: 'fintechops-auth-service'
+    static_configs:
+      - targets: ['auth-service:3001']
+    metrics_path: /metrics
+
+  - job_name: 'fintechops-user-service'
+    static_configs:
+      - targets: ['user-service:3002']
+    metrics_path: /metrics
+
+  - job_name: 'fintechops-calculator-service'
+    static_configs:
+      - targets: ['calculator-service:3003']
+    metrics_path: /metrics
+
+  - job_name: 'fintechops-market-service'
+    static_configs:
+      - targets: ['market-service:3004']
+    metrics_path: /metrics
+
+  - job_name: 'fintechops-news-service'
+    static_configs:
+      - targets: ['news-service:3005']
+    metrics_path: /metrics
+
+  - job_name: 'fintechops-blog-service'
+    static_configs:
+      - targets: ['blog-service:3006']
+    metrics_path: /metrics
+
+  - job_name: 'fintechops-chatbot-service'
+    static_configs:
+      - targets: ['chatbot-service:3007']
+    metrics_path: /metrics
+
+  - job_name: 'fintechops-email-service'
+    static_configs:
+      - targets: ['email-service:3008']
+    metrics_path: /metrics
+
+  - job_name: 'fintechops-admin-service'
+    static_configs:
+      - targets: ['admin-service:3009']
+    metrics_path: /metrics
+
+  # MongoDB
+  - job_name: 'mongodb'
+    static_configs:
+      - targets: ['mongodb-exporter:9216']
+
+  # PostgreSQL
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+
+  # Redis
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+
+  # NGINX Ingress
+  - job_name: 'nginx-ingress'
+    static_configs:
+      - targets: ['nginx-ingress-controller-metrics:10254']

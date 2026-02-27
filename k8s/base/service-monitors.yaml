@@ -1,0 +1,220 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: fintechops-services
+  namespace: fintechops
+  labels:
+    app: fintechops
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fintechops
+  namespaceSelector:
+    matchNames:
+      - fintechops
+  endpoints:
+    - port: http
+      interval: 30s
+      path: /metrics
+      scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: api-gateway
+  namespace: fintechops
+  labels:
+    app: api-gateway
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: api-gateway
+  namespaceSelector:
+    matchNames:
+      - fintechops
+  endpoints:
+    - port: "3000"
+      interval: 30s
+      path: /metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: auth-service
+  namespace: fintechops
+  labels:
+    app: auth-service
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: auth-service
+  namespaceSelector:
+    matchNames:
+      - fintechops
+  endpoints:
+    - port: "3001"
+      interval: 30s
+      path: /metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: user-service
+  namespace: fintechops
+  labels:
+    app: user-service
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: user-service
+  namespaceSelector:
+    matchNames:
+      - fintechops
+  endpoints:
+    - port: "3002"
+      interval: 30s
+      path: /metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: calculator-service
+  namespace: fintechops
+  labels:
+    app: calculator-service
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: calculator-service
+  namespaceSelector:
+    matchNames:
+      - fintechops
+  endpoints:
+    - port: "3003"
+      interval: 30s
+      path: /metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: market-service
+  namespace: fintechops
+  labels:
+    app: market-service
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: market-service
+  namespaceSelector:
+    matchNames:
+      - fintechops
+  endpoints:
+    - port: "3004"
+      interval: 30s
+      path: /metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: news-service
+  namespace: fintechops
+  labels:
+    app: news-service
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: news-service
+  namespaceSelector:
+    matchNames:
+      - fintechops
+  endpoints:
+    - port: "3005"
+      interval: 30s
+      path: /metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: blog-service
+  namespace: fintechops
+  labels:
+    app: blog-service
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: blog-service
+  namespaceSelector:
+    matchNames:
+      - fintechops
+  endpoints:
+    - port: "3006"
+      interval: 30s
+      path: /metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: chatbot-service
+  namespace: fintechops
+  labels:
+    app: chatbot-service
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: chatbot-service
+  namespaceSelector:
+    matchNames:
+      - fintechops
+  endpoints:
+    - port: "3007"
+      interval: 30s
+      path: /metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: email-service
+  namespace: fintechops
+  labels:
+    app: email-service
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: email-service
+  namespaceSelector:
+    matchNames:
+      - fintechops
+  endpoints:
+    - port: "3008"
+      interval: 30s
+      path: /metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: admin-service
+  namespace: fintechops
+  labels:
+    app: admin-service
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: admin-service
+  namespaceSelector:
+    matchNames:
+      - fintechops
+  endpoints:
+    - port: "3009"
+      interval: 30s
+      path: /metrics

@@ -1,0 +1,110 @@
+# ==============================
+# Node.js
+# ==============================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn/cache
+.yarn/unplugged
+.pnp.*
+package-lock.json
+yarn.lock
+
+# ==============================
+# Environment / Secrets
+# ==============================
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+.env.staging
+*.pem
+*.key
+*.cert
+
+# ==============================
+# Build outputs
+# ==============================
+dist/
+build/
+*.tsbuildinfo
+.next/
+out/
+
+# ==============================
+# IDE / Editor
+# ==============================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# ==============================
+# OS files
+# ==============================
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ==============================
+# Logs
+# ==============================
+logs/
+*.log
+
+# ==============================
+# Testing / Coverage
+# ==============================
+coverage/
+.nyc_output/
+junit.xml
+test-results/
+
+# ==============================
+# Docker
+# ==============================
+.dockerignore
+
+# ==============================
+# AWS SAM / Lambda
+# ==============================
+.aws-sam/
+samconfig.toml
+
+# ==============================
+# Temporary files
+# ==============================
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+
+# ==============================
+# Monitoring data (local volumes)
+# ==============================
+monitoring/data/
+prometheus_data/
+grafana_data/
+
+# ==============================
+# Services to exclude (push one at a time)
+# ==============================
+services/admin-service/
+services/auth-service/
+services/blog-service/
+services/calculator-service/
+services/chatbot-service/
+services/email-service/
+services/market-service/
+services/news-service/
+services/user-service/

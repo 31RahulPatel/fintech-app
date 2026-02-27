@@ -1,0 +1,11 @@
+{
+  "name": "toggle-schedule",
+  "version": "1.0.0",
+  "description": "Toggle schedule active/paused state",
+  "main": "index.js",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/lib-dynamodb": "^3.0.0",
+    "@aws-sdk/client-scheduler": "^3.0.0"
+  }
+}

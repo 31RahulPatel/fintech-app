@@ -1,0 +1,80 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: fintechops-staging
+
+resources:
+  - ../../base
+
+nameSuffix: -staging
+
+commonLabels:
+  environment: staging
+
+patches:
+  # Scale down replicas for staging
+  - patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+    target:
+      kind: Deployment
+      name: ".*"
+
+  - patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 3
+    target:
+      kind: HorizontalPodAutoscaler
+      name: ".*"
+
+configMapGenerator:
+  - name: fintechops-config
+    behavior: merge
+    literals:
+      - NODE_ENV=staging
+      - LOG_LEVEL=debug
+
+# ============================================
+# Image tags - Updated automatically by Jenkins CI
+# Single ECR repo: <AWS_ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/fintechops
+# Tags: <service>-<build_number>-<commit_hash>
+# ============================================
+images:
+  - name: fintechops-frontend
+    newName: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/fintechops
+    newTag: frontend-latest
+  - name: fintechops-api-gateway
+    newName: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/fintechops
+    newTag: api-gateway-latest
+  - name: fintechops-auth-service
+    newName: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/fintechops
+    newTag: auth-service-latest
+  - name: fintechops-user-service
+    newName: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/fintechops
+    newTag: user-service-latest
+  - name: fintechops-calculator-service
+    newName: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/fintechops
+    newTag: calculator-service-latest
+  - name: fintechops-market-service
+    newName: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/fintechops
+    newTag: market-service-latest
+  - name: fintechops-news-service
+    newName: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/fintechops
+    newTag: news-service-latest
+  - name: fintechops-blog-service
+    newName: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/fintechops
+    newTag: blog-service-latest
+  - name: fintechops-chatbot-service
+    newName: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/fintechops
+    newTag: chatbot-service-latest
+  - name: fintechops-email-service
+    newName: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/fintechops
+    newTag: email-service-latest
+  - name: fintechops-admin-service
+    newName: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/fintechops
+    newTag: admin-service-latest

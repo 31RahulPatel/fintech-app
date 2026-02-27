@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fintechops
+  labels:
+    app.kubernetes.io/name: fintechops
+    app.kubernetes.io/managed-by: kustomize

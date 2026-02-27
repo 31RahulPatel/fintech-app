@@ -1,0 +1,33 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: fintechops
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secrets.yaml
+  - storage-class.yaml
+  # Application Services
+  - deployments/api-gateway.yaml
+  - deployments/auth-service.yaml
+  - deployments/user-service.yaml
+  - deployments/calculator-service.yaml
+  - deployments/market-service.yaml
+  - deployments/news-service.yaml
+  - deployments/blog-service.yaml
+  - deployments/chatbot-service.yaml
+  - deployments/email-service.yaml
+  - deployments/admin-service.yaml
+  - deployments/frontend.yaml
+  # Databases
+  - deployments/mongodb.yaml
+  - deployments/postgres.yaml
+  - deployments/redis.yaml
+  # Networking & Scaling
+  - ingress.yaml
+  - hpa.yaml
+
+commonLabels:
+  app.kubernetes.io/name: fintechops
+  app.kubernetes.io/managed-by: kustomize

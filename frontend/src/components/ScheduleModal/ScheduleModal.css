@@ -1,0 +1,377 @@
+.schedule-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.schedule-modal {
+  background: var(--bg-primary, #ffffff);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.schedule-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-color, #e5e5e5);
+  position: sticky;
+  top: 0;
+  background: var(--bg-primary, #ffffff);
+  z-index: 10;
+}
+
+.schedule-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.schedule-modal-title h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-primary, #1a1a1a);
+}
+
+.schedule-modal-title .title-icon {
+  color: #fb8500;
+  font-size: 1.5rem;
+}
+
+.schedule-modal-header .close-btn {
+  background: none;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-secondary, #666);
+  transition: all 0.2s ease;
+}
+
+.schedule-modal-header .close-btn:hover {
+  background: var(--bg-secondary, #f5f5f5);
+  color: var(--text-primary, #1a1a1a);
+}
+
+.schedule-form {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary, #1a1a1a);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-group .label-icon {
+  color: #fb8500;
+  font-size: 1rem;
+}
+
+.form-group textarea,
+.form-group input[type="time"],
+.form-group input[type="date"],
+.form-group select {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--border-color, #e5e5e5);
+  border-radius: 10px;
+  font-size: 0.9375rem;
+  background: var(--bg-primary, #ffffff);
+  color: var(--text-primary, #1a1a1a);
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.form-group textarea:focus,
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #fb8500;
+  box-shadow: 0 0 0 3px rgba(251, 133, 0, 0.1);
+}
+
+.form-group textarea.error,
+.form-group input.error {
+  border-color: #dc3545;
+}
+
+.error-text {
+  color: #dc3545;
+  font-size: 0.8125rem;
+}
+
+.select-wrapper {
+  position: relative;
+}
+
+.select-wrapper select {
+  appearance: none;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+.select-wrapper .select-icon {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary, #666);
+  pointer-events: none;
+}
+
+/* Days Selector */
+.days-selector {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.day-btn {
+  padding: 0.5rem 0.875rem;
+  border: 1px solid var(--border-color, #e5e5e5);
+  border-radius: 8px;
+  background: var(--bg-primary, #ffffff);
+  color: var(--text-primary, #1a1a1a);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.day-btn:hover {
+  border-color: #fb8500;
+}
+
+.day-btn.active {
+  background: #fb8500;
+  border-color: #fb8500;
+  color: white;
+}
+
+/* Checkbox Group */
+.checkbox-group {
+  flex-direction: row !important;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  position: relative;
+  padding-left: 2rem;
+}
+
+.checkbox-label input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  width: 0;
+  height: 0;
+}
+
+.checkbox-label .checkmark {
+  position: absolute;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color, #e5e5e5);
+  border-radius: 5px;
+  transition: all 0.2s ease;
+}
+
+.checkbox-label:hover .checkmark {
+  border-color: #fb8500;
+}
+
+.checkbox-label input:checked ~ .checkmark {
+  background: #fb8500;
+  border-color: #fb8500;
+}
+
+.checkbox-label input:checked ~ .checkmark::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* Submit Error */
+.submit-error {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+/* Modal Actions */
+.schedule-modal-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border-color, #e5e5e5);
+}
+
+.schedule-modal-actions .cancel-btn,
+.schedule-modal-actions .submit-btn {
+  flex: 1;
+  padding: 0.875rem 1.5rem;
+  border-radius: 10px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.schedule-modal-actions .cancel-btn {
+  background: var(--bg-secondary, #f5f5f5);
+  border: 1px solid var(--border-color, #e5e5e5);
+  color: var(--text-primary, #1a1a1a);
+}
+
+.schedule-modal-actions .cancel-btn:hover {
+  background: var(--bg-primary, #ffffff);
+  border-color: var(--text-secondary, #666);
+}
+
+.schedule-modal-actions .submit-btn {
+  background: #fb8500;
+  border: none;
+  color: white;
+}
+
+.schedule-modal-actions .submit-btn:hover:not(:disabled) {
+  background: #e67a00;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(251, 133, 0, 0.3);
+}
+
+.schedule-modal-actions .submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.schedule-modal-actions .submit-btn .spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Dark Theme */
+.chatbot-dark .schedule-modal {
+  background: #1a1a1a;
+}
+
+.chatbot-dark .schedule-modal-header {
+  background: #1a1a1a;
+  border-color: #333;
+}
+
+.chatbot-dark .schedule-modal-title h2 {
+  color: #ffffff;
+}
+
+.chatbot-dark .form-group label {
+  color: #ffffff;
+}
+
+.chatbot-dark .form-group textarea,
+.chatbot-dark .form-group input,
+.chatbot-dark .form-group select {
+  background: #2a2a2a;
+  border-color: #444;
+  color: #ffffff;
+}
+
+.chatbot-dark .form-group textarea::placeholder {
+  color: #888;
+}
+
+.chatbot-dark .day-btn {
+  background: #2a2a2a;
+  border-color: #444;
+  color: #ffffff;
+}
+
+.chatbot-dark .schedule-modal-actions {
+  border-color: #333;
+}
+
+.chatbot-dark .schedule-modal-actions .cancel-btn {
+  background: #2a2a2a;
+  border-color: #444;
+  color: #ffffff;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .schedule-modal {
+    max-height: 100vh;
+    border-radius: 16px 16px 0 0;
+    margin-top: auto;
+  }
+
+  .days-selector {
+    justify-content: center;
+  }
+
+  .schedule-modal-actions {
+    flex-direction: column-reverse;
+  }
+}

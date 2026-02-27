@@ -1,0 +1,10 @@
+{
+  "name": "get-results",
+  "version": "1.0.0",
+  "description": "Get execution results for a schedule",
+  "main": "index.js",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/lib-dynamodb": "^3.0.0"
+  }
+}
