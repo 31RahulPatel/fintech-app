@@ -13,9 +13,9 @@ pipeline {
 
     environment {
         // ---- CHANGE THESE ----
-        AWS_ACCOUNT_ID   = '<YOUR_AWS_ACCOUNT_ID>'
-        AWS_REGION       = 'us-east-1'
-        GITHUB_REPO      = '<YOUR_GITHUB_REPO_URL>'  // e.g. https://github.com/user/fintechops.git
+        AWS_ACCOUNT_ID   = '196390795701'
+        AWS_REGION       = 'ap-south-1'
+        GITHUB_REPO      = 'https://github.com/31RahulPatel/fintechapp.git'  // e.g. https://github.com/user/fintechops.git
         DOMAIN           = '<YOUR_DOMAIN>'            // e.g. fintechops.com
         // ---- END CHANGE ----
 
