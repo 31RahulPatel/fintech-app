@@ -1,3 +1,8 @@
+// ======================================================
+// FINTECHOPS – FINAL PRODUCTION CI/CD PIPELINE
+// Docker-Native Sonar + Parallel Builds + GitOps
+// ======================================================
+
 pipeline {
     agent any
 
@@ -19,12 +24,15 @@ pipeline {
         AWS_ACCOUNT_ID = '196390795701'
         AWS_REGION     = 'ap-south-1'
         APP_NAME       = 'fintechops'
-        SONAR_HOST_URL = 'http://sonarqube:9000'
+        SONAR_HOST_URL = 'http://3.110.66.135:9000'
         ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
     }
 
     stages {
 
+        // ======================================================
+        // CHECKOUT
+        // ======================================================
         stage('Checkout') {
             steps {
                 checkout scm
@@ -43,23 +51,29 @@ pipeline {
             }
         }
 
+        // ======================================================
+        // SONARQUBE SCAN (Docker-Based Scanner)
+        // ======================================================
         stage('SonarQube Scan') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                        sh """
-                            sonar-scanner \
-                              -Dsonar.host.url=${SONAR_HOST_URL} \
-                              -Dsonar.login=${SONAR_TOKEN} \
-                              -Dsonar.projectKey=${APP_NAME} \
-                              -Dsonar.sources=frontend/src,services \
-                              -Dsonar.exclusions=**/node_modules/**,**/build/**
-                        """
-                    }
+                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                    sh """
+                        docker run --rm \
+                          -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                          -e SONAR_LOGIN=\$SONAR_TOKEN \
+                          -v \$(pwd):/usr/src \
+                          sonarsource/sonar-scanner-cli \
+                          -Dsonar.projectKey=${APP_NAME} \
+                          -Dsonar.sources=frontend/src,services \
+                          -Dsonar.exclusions=**/node_modules/**,**/build/**
+                    """
                 }
             }
         }
 
+        // ======================================================
+        // QUALITY GATE
+        // ======================================================
         stage('Quality Gate') {
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
@@ -68,6 +82,9 @@ pipeline {
             }
         }
 
+        // ======================================================
+        // LOGIN TO ECR
+        // ======================================================
         stage('Login to ECR') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
@@ -79,6 +96,9 @@ pipeline {
             }
         }
 
+        // ======================================================
+        // BUILD + TRIVY SCAN + PUSH (PARALLEL)
+        // ======================================================
         stage('Build, Scan & Push') {
             steps {
                 script {
@@ -89,7 +109,6 @@ pipeline {
                     ]
 
                     if (params.SERVICES != null && params.SERVICES.trim() != "") {
-
                         def requested = []
                         for (svc in params.SERVICES.split(',')) {
                             requested.add(svc.trim())
@@ -101,17 +120,18 @@ pipeline {
                                 filtered[entry.key] = entry.value
                             }
                         }
-
                         services = filtered
                     }
 
                     def builds = [:]
 
                     for (entry in services) {
+
                         def name = entry.key
                         def path = entry.value
 
                         builds[name] = {
+
                             def image = "${ECR_REGISTRY}/${name}"
 
                             sh """
@@ -151,6 +171,9 @@ pipeline {
             }
         }
 
+        // ======================================================
+        // GITOPS UPDATE
+        // ======================================================
         stage('Update K8s Manifests') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
@@ -181,9 +204,20 @@ pipeline {
         }
     }
 
+    // ======================================================
+    // CLEANUP
+    // ======================================================
     post {
         always {
             sh "docker image prune -af || true"
+        }
+
+        success {
+            echo "✅ PIPELINE SUCCESS – ${IMAGE_TAG}"
+        }
+
+        failure {
+            echo "❌ PIPELINE FAILED"
         }
     }
 }
