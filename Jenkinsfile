@@ -11,6 +11,14 @@
 pipeline {
     agent any
 
+    parameters {
+        string(
+            name: 'SERVICES',
+            defaultValue: 'frontend,api-gateway',
+            description: 'Comma-separated list of services to build (e.g. frontend,api-gateway)'
+        )
+    }
+
     environment {
         // ---- CHANGE THESE ----
         AWS_ACCOUNT_ID   = '196390795701'
@@ -121,16 +129,22 @@ pipeline {
                             [name: 'api-gateway', context: 'services/api-gateway'],
                         ]
 
+                        // Determine which services to build:
+                        // 1) If SERVICES param is set, honor that list
+                        // 2) Otherwise, fall back to CHANGED_SERVICES detection
                         def servicesToBuild = allServices
-                        if (env.CHANGED_SERVICES != 'all') {
-                            def changedList = env.CHANGED_SERVICES.split(',')
+                        if (params.SERVICES?.trim()) {
+                            def requested = params.SERVICES.split(',').collect { it.trim() }
+                            servicesToBuild = allServices.findAll { svc -> requested.contains(svc.name) }
+                        } else if (env.CHANGED_SERVICES != 'all') {
+                            def changedList = env.CHANGED_SERVICES.split(',').collect { it.trim() }
                             servicesToBuild = allServices.findAll { svc ->
-                                changedList.any { it.trim() == svc.name }
+                                changedList.contains(svc.name)
                             }
                         }
 
                         if (servicesToBuild.isEmpty()) {
-                            echo "No services changed, building all..."
+                            echo "No matching services for selection, building all..."
                             servicesToBuild = allServices
                         }
 
