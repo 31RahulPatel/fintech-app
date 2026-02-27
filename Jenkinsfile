@@ -153,11 +153,15 @@ pipeline {
                             def svcTag = "${svc.name}-${IMAGE_TAG}"
                             echo "Building ${svc.name}..."
                             sh """
-                                docker build \
-                                    -t ${imageName}:${svcTag} \
-                                    -t ${imageName}:${svc.name}-latest \
-                                    --build-arg BUILD_NUMBER=${BUILD_NUMBER} \
-                                    --build-arg GIT_COMMIT=${GIT_COMMIT_SHORT} \
+                                # Pull latest image to warm Docker cache (if it exists)
+                                docker pull ${imageName}:${svc.name}-latest || true
+
+                                docker build \\
+                                    --cache-from ${imageName}:${svc.name}-latest \\
+                                    -t ${imageName}:${svcTag} \\
+                                    -t ${imageName}:${svc.name}-latest \\
+                                    --build-arg BUILD_NUMBER=${BUILD_NUMBER} \\
+                                    --build-arg GIT_COMMIT=${GIT_COMMIT_SHORT} \\
                                     ${svc.context}
                             """
                         }
