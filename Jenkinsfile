@@ -41,7 +41,9 @@ pipeline {
             steps {
                 checkout scm
                 script {
-                    env.GIT_BRANCH_NAME = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
+                    // Jenkins checks out a specific commit, so git may show "HEAD" (detached).
+                    // Prefer Jenkins-provided branch name when available.
+                    env.GIT_BRANCH_NAME = env.BRANCH_NAME ?: sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
                     echo "Branch: ${env.GIT_BRANCH_NAME} | Commit: ${GIT_COMMIT_SHORT} | Tag: ${IMAGE_TAG}"
 
                     // Detect changed services for selective builds
@@ -67,17 +69,21 @@ pipeline {
         // ============================================
         stage('SonarQube Analysis') {
             steps {
-                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                    sh '''
-                        sonar-scanner \
-                            -Dsonar.host.url=${SONAR_HOST_URL} \
-                            -Dsonar.login=${SONAR_TOKEN} \
-                            -Dsonar.projectKey=${APP_NAME} \
-                            -Dsonar.projectName="FintechOps" \
-                            -Dsonar.sources=frontend/src,services \
-                            -Dsonar.exclusions="**/node_modules/**,**/coverage/**,**/build/**,**/dist/**,**/*.test.js,**/*.spec.js" \
-                            -Dsonar.sourceEncoding=UTF-8
-                    '''
+                // Required for waitForQualityGate: this wrapper attaches the Sonar analysis to the build.
+                // NOTE: Ensure Jenkins "Configure System" has a SonarQube server with this name.
+                withSonarQubeEnv('sonarqube') {
+                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                        sh '''
+                            sonar-scanner \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.login=${SONAR_TOKEN} \
+                                -Dsonar.projectKey=${APP_NAME} \
+                                -Dsonar.projectName="FintechOps" \
+                                -Dsonar.sources=frontend/src,services \
+                                -Dsonar.exclusions="**/node_modules/**,**/coverage/**,**/build/**,**/dist/**,**/*.test.js,**/*.spec.js" \
+                                -Dsonar.sourceEncoding=UTF-8
+                        '''
+                    }
                 }
             }
         }
