@@ -289,12 +289,12 @@ pipeline {
                             """
                         }
 
-                        // Commit and push
+                        // Commit and push K8s manifest changes back to main branch
                         sh """
                             git add k8s/
                             git diff --cached --quiet || {
                                 git commit -m "[CI] Update ${environment} images to ${IMAGE_TAG}"
-                                git push https://\${GIT_USER}:\${GIT_TOKEN}@\$(echo ${GITHUB_REPO} | sed 's|https://||') HEAD:${env.GIT_BRANCH_NAME}
+                                git push https://\${GIT_USER}:\${GIT_TOKEN}@\$(echo ${GITHUB_REPO} | sed 's|https://||') HEAD:refs/heads/main
                             }
                         """
 
