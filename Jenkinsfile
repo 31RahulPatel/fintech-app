@@ -115,18 +115,10 @@ pipeline {
                                 docker login --username AWS --password-stdin ${ECR_REGISTRY}
                         """
 
+                        // Only include services that exist in this repo
                         def allServices = [
-                            [name: 'frontend',            context: 'frontend'],
-                            [name: 'api-gateway',         context: 'services/api-gateway'],
-                            [name: 'auth-service',        context: 'services/auth-service'],
-                            [name: 'user-service',        context: 'services/user-service'],
-                            [name: 'calculator-service',  context: 'services/calculator-service'],
-                            [name: 'market-service',      context: 'services/market-service'],
-                            [name: 'news-service',        context: 'services/news-service'],
-                            [name: 'blog-service',        context: 'services/blog-service'],
-                            [name: 'chatbot-service',     context: 'services/chatbot-service'],
-                            [name: 'email-service',       context: 'services/email-service'],
-                            [name: 'admin-service',       context: 'services/admin-service']
+                            [name: 'frontend',    context: 'frontend'],
+                            [name: 'api-gateway', context: 'services/api-gateway'],
                         ]
 
                         def servicesToBuild = allServices
