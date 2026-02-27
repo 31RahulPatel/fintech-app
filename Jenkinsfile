@@ -72,16 +72,17 @@ pipeline {
                 // Matches the SonarQube server name configured in Jenkins ("SonarQube").
                 withSonarQubeEnv('SonarQube') {
                     withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                        sh '''
-                            sonar-scanner \
-                                -Dsonar.host.url=${SONAR_HOST_URL} \
-                                -Dsonar.login=${SONAR_TOKEN} \
-                                -Dsonar.projectKey=${APP_NAME} \
-                                -Dsonar.projectName="FintechOps" \
-                                -Dsonar.sources=frontend/src,services \
-                                -Dsonar.exclusions="**/node_modules/**,**/coverage/**,**/build/**,**/dist/**,**/*.test.js,**/*.spec.js" \
+                        def scannerHome = tool 'SonarScanner'
+                        sh """
+                            ${scannerHome}/bin/sonar-scanner \\
+                                -Dsonar.host.url=${SONAR_HOST_URL} \\
+                                -Dsonar.login=${SONAR_TOKEN} \\
+                                -Dsonar.projectKey=${APP_NAME} \\
+                                -Dsonar.projectName=FintechOps \\
+                                -Dsonar.sources=frontend/src,services \\
+                                -Dsonar.exclusions=**/node_modules/**,**/coverage/**,**/build/**,**/dist/**,**/*.test.js,**/*.spec.js \\
                                 -Dsonar.sourceEncoding=UTF-8
-                        '''
+                        """
                     }
                 }
             }
