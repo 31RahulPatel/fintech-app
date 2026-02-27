@@ -1,7 +1,3 @@
-// ======================================================
-// FINTECHOPS – PRODUCTION CI/CD PIPELINE
-// ======================================================
-
 pipeline {
     agent any
 
@@ -29,9 +25,6 @@ pipeline {
 
     stages {
 
-        // ======================================================
-        // CHECKOUT
-        // ======================================================
         stage('Checkout') {
             steps {
                 checkout scm
@@ -50,9 +43,6 @@ pipeline {
             }
         }
 
-        // ======================================================
-        // SONARQUBE SCAN
-        // ======================================================
         stage('SonarQube Scan') {
             steps {
                 withSonarQubeEnv('SonarQube') {
@@ -78,9 +68,6 @@ pipeline {
             }
         }
 
-        // ======================================================
-        // ECR LOGIN
-        // ======================================================
         stage('Login to ECR') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
@@ -92,29 +79,40 @@ pipeline {
             }
         }
 
-        // ======================================================
-        // BUILD + SCAN + PUSH (PARALLEL)
-        // ======================================================
         stage('Build, Scan & Push') {
             steps {
                 script {
 
                     def services = [
-                        frontend      : "frontend",
-                        "api-gateway" : "services/api-gateway"
+                        frontend: "frontend",
+                        "api-gateway": "services/api-gateway"
                     ]
 
-                    if (params.SERVICES?.trim()) {
-                        def requested = params.SERVICES.split(',')*.trim()
-                        services = services.findAll { requested.contains(it.key) }
+                    if (params.SERVICES != null && params.SERVICES.trim() != "") {
+
+                        def requested = []
+                        for (svc in params.SERVICES.split(',')) {
+                            requested.add(svc.trim())
+                        }
+
+                        def filtered = [:]
+                        for (entry in services) {
+                            if (requested.contains(entry.key)) {
+                                filtered[entry.key] = entry.value
+                            }
+                        }
+
+                        services = filtered
                     }
 
-                    def builds = services.collectEntries { name, path ->
-                        ["${name}" : {
+                    def builds = [:]
 
+                    for (entry in services) {
+                        def name = entry.key
+                        def path = entry.value
+
+                        builds[name] = {
                             def image = "${ECR_REGISTRY}/${name}"
-
-                            echo "Building ${name}..."
 
                             sh """
                                 docker pull ${image}:latest || true
@@ -134,8 +132,6 @@ pipeline {
                                   ${path}
                             """
 
-                            echo "Scanning ${name} with Trivy..."
-
                             sh """
                                 trivy image \
                                   --exit-code 1 \
@@ -143,13 +139,11 @@ pipeline {
                                   ${image}:${IMAGE_TAG}
                             """
 
-                            echo "Pushing ${name}..."
-
                             sh """
                                 docker push ${image}:${IMAGE_TAG}
                                 docker push ${image}:latest
                             """
-                        }]
+                        }
                     }
 
                     parallel builds
@@ -157,9 +151,6 @@ pipeline {
             }
         }
 
-        // ======================================================
-        // GITOPS UPDATE
-        // ======================================================
         stage('Update K8s Manifests') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
@@ -184,28 +175,15 @@ pipeline {
                                 git push https://${GIT_USER}:${GIT_TOKEN}@github.com/31RahulPatel/fintechapp.git HEAD:main
                             }
                         """
-
-                        echo "GitOps update completed"
                     }
                 }
             }
         }
     }
 
-    // ======================================================
-    // CLEANUP
-    // ======================================================
     post {
         always {
             sh "docker image prune -af || true"
-        }
-
-        success {
-            echo "✅ PIPELINE SUCCESS – ${IMAGE_TAG}"
-        }
-
-        failure {
-            echo "❌ PIPELINE FAILED"
         }
     }
 }
