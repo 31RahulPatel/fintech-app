@@ -69,8 +69,8 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 // Required for waitForQualityGate: this wrapper attaches the Sonar analysis to the build.
-                // NOTE: Ensure Jenkins "Configure System" has a SonarQube server with this name.
-                withSonarQubeEnv('sonarqube') {
+                // Matches the SonarQube server name configured in Jenkins ("SonarQube").
+                withSonarQubeEnv('SonarQube') {
                     withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
                         sh '''
                             sonar-scanner \
