@@ -271,7 +271,6 @@ pipeline {
                                 cd ../../..
                             """
                         }
-                        }
 
                         // Commit and push
                         sh """
