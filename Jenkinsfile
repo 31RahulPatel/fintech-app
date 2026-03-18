@@ -126,6 +126,7 @@ pipeline {
                      secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']
                 ]) {
                     sh """
+                        export PATH=\$PATH:/usr/local/bin:/usr/bin
                         aws ecr get-login-password --region ${AWS_REGION} | \
                         docker login --username AWS --password-stdin ${ECR_REGISTRY}
                     """
@@ -170,6 +171,7 @@ pipeline {
 
                             parallelBuilds[svcName] = {
                                 sh """
+                                    export PATH=\$PATH:/usr/local/bin:/usr/bin
                                     aws ecr describe-repositories --repository-names ${APP_NAME} --region ${AWS_REGION} 2>/dev/null || \
                                     aws ecr create-repository --repository-name ${APP_NAME} --region ${AWS_REGION}
 
