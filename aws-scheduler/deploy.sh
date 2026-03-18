@@ -35,10 +35,13 @@ check_env() {
     fi
 }
 
+# Support both legacy and repo-standard env var names.
+SES_FROM_EMAIL=${SES_FROM_EMAIL:-${AWS_SES_FROM_EMAIL:-}}
+
 check_env "GROQ_API_KEY"
-check_env "JWT_SECRET"
 check_env "SES_FROM_EMAIL"
 check_env "FRONTEND_URL"
+check_env "AWS_COGNITO_USER_POOL_ID"
 
 echo "✅ Environment variables verified"
 echo ""
@@ -72,7 +75,7 @@ sam deploy \
     --parameter-overrides \
         Environment="$ENVIRONMENT" \
         GroqApiKey="$GROQ_API_KEY" \
-        JwtSecret="$JWT_SECRET" \
+        CognitoUserPoolId="$AWS_COGNITO_USER_POOL_ID" \
         SesFromEmail="$SES_FROM_EMAIL" \
         FrontendUrl="$FRONTEND_URL" \
     --no-confirm-changeset \

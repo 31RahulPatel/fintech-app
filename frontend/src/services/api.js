@@ -34,11 +34,15 @@ api.interceptors.response.use(
         const refreshToken = localStorage.getItem('refreshToken');
         if (refreshToken) {
           const response = await axios.post(
-            `${process.env.REACT_APP_API_URL || 'http://localhost:3000/api'}/auth/refresh`,
+            `${process.env.REACT_APP_API_URL || 'http://localhost:3000/api'}/auth/refresh-token`,
             { refreshToken }
           );
 
-          const { token } = response.data;
+          const token = response.data.accessToken || response.data.token;
+          if (!token) {
+            throw new Error('No access token returned from refresh endpoint');
+          }
+
           localStorage.setItem('token', token);
           api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
           originalRequest.headers.Authorization = `Bearer ${token}`;
