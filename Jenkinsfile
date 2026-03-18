@@ -28,8 +28,9 @@ pipeline {
         AWS_ACCOUNT_ID = '196390795701'
         AWS_REGION     = 'ap-south-1'
         APP_NAME       = 'fintechops'
+        GITHUB_REPO    = 'https://github.com/31RahulPatel/fintech-app.git'
         ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-        SONAR_HOST_URL = "http://3.110.66.135:9000"
+        SONAR_HOST_URL = "http://3.86.88.168:9000"
     }
 
     options {
@@ -81,22 +82,19 @@ pipeline {
                 expression { return !params.SKIP_SONAR }
             }
             steps {
-                script {
+                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
                     withSonarQubeEnv('SonarQube') {
-                        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                            def scannerHome = tool 'SonarScanner'
-                            sh """
-                                ${scannerHome}/bin/sonar-scanner \
-                                -Dsonar.host.url=${SONAR_HOST_URL} \
-                                -Dsonar.login=\$SONAR_TOKEN \
-                                -Dsonar.projectKey=${APP_NAME} \
-                                -Dsonar.projectName=FintechOps \
-                                -Dsonar.projectVersion=${env.IMAGE_TAG} \
-                                -Dsonar.sources=frontend/src,services \
-                                -Dsonar.exclusions=**/node_modules/**,**/coverage/**,**/build/**,**/dist/**,**/*.test.js,**/*.spec.js \
-                                -Dsonar.sourceEncoding=UTF-8
-                            """
-                        }
+                        sh """
+                            sonar-scanner \
+                            -Dsonar.host.url=${SONAR_HOST_URL} \
+                            -Dsonar.token=\$SONAR_TOKEN \
+                            -Dsonar.projectKey=${APP_NAME} \
+                            -Dsonar.projectName=FintechOps \
+                            -Dsonar.projectVersion=${BUILD_NUMBER} \
+                            -Dsonar.sources=frontend/src,services \
+                            -Dsonar.exclusions=**/node_modules/**,**/coverage/**,**/build/**,**/dist/**,**/*.test.js,**/*.spec.js \
+                            -Dsonar.sourceEncoding=UTF-8
+                        """
                     }
                 }
             }
@@ -281,7 +279,7 @@ pipeline {
                         sh """
                             git add infrastructure/kubernetes/${params.ENVIRONMENT}/ || true
                             git diff --cached --quiet || git commit -m "ci: update image tags to ${env.IMAGE_TAG} [skip ci]"
-                            git push https://\${GIT_USER}:\${GIT_TOKEN}@github.com/31RahulPatel/fintechapp.git HEAD:${env.GIT_BRANCH_NAME} || true
+                            git push https://\${GIT_USER}:\${GIT_TOKEN}@github.com/31RahulPatel/fintech-app.git HEAD:${env.GIT_BRANCH_NAME} || true
                         """
                     }
                 }
