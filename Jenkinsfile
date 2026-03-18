@@ -27,12 +27,9 @@ pipeline {
     environment {
         AWS_ACCOUNT_ID = '196390795701'
         AWS_REGION     = 'ap-south-1'
-        GITHUB_REPO    = 'https://github.com/31RahulPatel/fintechapp.git'
         APP_NAME       = 'fintechops'
         ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
         SONAR_HOST_URL = "http://3.110.66.135:9000"
-        ARGOCD_SERVER  = 'argocd.fintechops.internal'
-        SLACK_CHANNEL  = '#fintechops-cicd'
     }
 
     options {
@@ -40,7 +37,6 @@ pipeline {
         timeout(time: 1, unit: 'HOURS')
         disableConcurrentBuilds()
         timestamps()
-        wrap([$class: 'AnsiColorBuildWrapper', colorMapName: 'xterm'])
     }
 
     stages {
@@ -98,8 +94,7 @@ pipeline {
                                 -Dsonar.projectVersion=${env.IMAGE_TAG} \
                                 -Dsonar.sources=frontend/src,services \
                                 -Dsonar.exclusions=**/node_modules/**,**/coverage/**,**/build/**,**/dist/**,**/*.test.js,**/*.spec.js \
-                                -Dsonar.sourceEncoding=UTF-8 \
-                                -Dsonar.javascript.lcov.reportPaths=**/coverage/lcov.info
+                                -Dsonar.sourceEncoding=UTF-8
                             """
                         }
                     }
@@ -123,7 +118,13 @@ pipeline {
         // ===============================
         stage('ECR Login') {
             steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-credentials',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
                     sh """
                         aws ecr get-login-password --region ${AWS_REGION} | \
                         docker login --username AWS --password-stdin ${ECR_REGISTRY}
@@ -137,7 +138,13 @@ pipeline {
         // ===============================
         stage('Build Docker Images') {
             steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-credentials',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
                     script {
                         def serviceContextMap = [
                             'frontend'           : 'frontend',
@@ -153,27 +160,20 @@ pipeline {
                             'admin-service'      : 'services/admin-service'
                         ]
 
-                        def requestedServices = params.SERVICES.split(',').collect { it.trim() }
-                        def parallelBuilds = [:]
+                        def requestedServices = params.SERVICES.split(',').collect { it.trim() }.findAll { serviceContextMap.containsKey(it) }
+                        env.BUILT_SERVICES = requestedServices.join(',')
 
+                        def parallelBuilds = [:]
                         requestedServices.each { svcName ->
-                            def ctx = serviceContextMap[svcName]
-                            if (!ctx) {
-                                echo "WARNING: Unknown service '${svcName}', skipping."
-                                return
-                            }
+                            def ctx       = serviceContextMap[svcName]
+                            def imageName = "${ECR_REGISTRY}/${APP_NAME}"
+                            def svcTag    = "${svcName}-${env.IMAGE_TAG}"
 
                             parallelBuilds[svcName] = {
-                                def imageName = "${ECR_REGISTRY}/${APP_NAME}"
-                                def svcTag    = "${svcName}-${IMAGE_TAG}"
-
-                                // Ensure ECR repo exists
                                 sh """
-                                    aws ecr describe-repositories --repository-names ${APP_NAME} --region ${AWS_REGION} || \
+                                    aws ecr describe-repositories --repository-names ${APP_NAME} --region ${AWS_REGION} 2>/dev/null || \
                                     aws ecr create-repository --repository-name ${APP_NAME} --region ${AWS_REGION}
-                                """
 
-                                sh """
                                     docker pull ${imageName}:${svcName}-latest || true
 
                                     docker build \
@@ -181,7 +181,7 @@ pipeline {
                                       -t ${imageName}:${svcTag} \
                                       -t ${imageName}:${svcName}-latest \
                                       --build-arg BUILD_NUMBER=${BUILD_NUMBER} \
-                                      --build-arg GIT_COMMIT=${GIT_COMMIT_SHORT} \
+                                      --build-arg GIT_COMMIT=${env.GIT_COMMIT_SHORT} \
                                       --build-arg ENVIRONMENT=${params.ENVIRONMENT} \
                                       ${ctx}
                                 """
@@ -189,7 +189,6 @@ pipeline {
                         }
 
                         parallel parallelBuilds
-                        env.BUILT_SERVICES = requestedServices.join(',')
                     }
                 }
             }
@@ -208,25 +207,21 @@ pipeline {
                     def parallelScans = [:]
 
                     services.each { service ->
-                        parallelScans[service] = {
+                        def svc = service
+                        parallelScans[svc] = {
                             sh """
                                 trivy image \
                                 --exit-code 1 \
                                 --severity CRITICAL,HIGH \
                                 --ignore-unfixed \
                                 --format table \
-                                --output trivy-${service}.txt \
-                                ${ECR_REGISTRY}/${APP_NAME}:${service}-${IMAGE_TAG}
+                                --output trivy-${svc}.txt \
+                                ${ECR_REGISTRY}/${APP_NAME}:${svc}-${env.IMAGE_TAG}
                             """
                         }
                     }
 
                     parallel parallelScans
-                }
-            }
-            post {
-                always {
-                    archiveArtifacts artifacts: 'trivy-*.txt', allowEmptyArchive: true
                 }
             }
         }
@@ -241,10 +236,11 @@ pipeline {
                     def parallelPush = [:]
 
                     services.each { service ->
-                        parallelPush[service] = {
+                        def svc = service
+                        parallelPush[svc] = {
                             sh """
-                                docker push ${ECR_REGISTRY}/${APP_NAME}:${service}-${IMAGE_TAG}
-                                docker push ${ECR_REGISTRY}/${APP_NAME}:${service}-latest
+                                docker push ${ECR_REGISTRY}/${APP_NAME}:${svc}-${env.IMAGE_TAG}
+                                docker push ${ECR_REGISTRY}/${APP_NAME}:${svc}-latest
                             """
                         }
                     }
@@ -255,14 +251,14 @@ pipeline {
         }
 
         // ===============================
-        // UPDATE ARGOCD MANIFESTS
+        // UPDATE K8S MANIFESTS
         // ===============================
         stage('Update K8s Manifests') {
             when {
                 anyOf {
                     branch 'main'
                     branch 'staging'
-                    expression { params.ENVIRONMENT == 'prod' }
+                    expression { return params.ENVIRONMENT == 'prod' }
                 }
             }
             steps {
@@ -273,15 +269,18 @@ pipeline {
                         sh "git config user.name 'Jenkins CI'"
 
                         services.each { service ->
+                            def svc = service
                             sh """
-                                sed -i 's|${ECR_REGISTRY}/${APP_NAME}:${service}-.*|${ECR_REGISTRY}/${APP_NAME}:${service}-${IMAGE_TAG}|g' \
-                                infrastructure/kubernetes/${params.ENVIRONMENT}/${service}-deployment.yaml || true
+                                FILE=infrastructure/kubernetes/${params.ENVIRONMENT}/${svc}-deployment.yaml
+                                if [ -f "\$FILE" ]; then
+                                    sed -i "s|${ECR_REGISTRY}/${APP_NAME}:${svc}-[^ ]*|${ECR_REGISTRY}/${APP_NAME}:${svc}-${env.IMAGE_TAG}|g" \$FILE
+                                fi
                             """
                         }
 
                         sh """
                             git add infrastructure/kubernetes/${params.ENVIRONMENT}/ || true
-                            git diff --cached --quiet || git commit -m "ci: update image tags to ${IMAGE_TAG} [skip ci]"
+                            git diff --cached --quiet || git commit -m "ci: update image tags to ${env.IMAGE_TAG} [skip ci]"
                             git push https://\${GIT_USER}:\${GIT_TOKEN}@github.com/31RahulPatel/fintechapp.git HEAD:${env.GIT_BRANCH_NAME} || true
                         """
                     }
@@ -293,23 +292,23 @@ pipeline {
     post {
         always {
             script {
+                archiveArtifacts artifacts: 'trivy-*.txt', allowEmptyArchive: true
                 sh "docker image prune -f || true"
-                // Clean up built images to free disk space
-                if (env.BUILT_SERVICES) {
+                if (env.BUILT_SERVICES && env.IMAGE_TAG) {
                     env.BUILT_SERVICES.split(',').each { service ->
-                        sh "docker rmi ${ECR_REGISTRY}/${APP_NAME}:${service}-${IMAGE_TAG} || true"
+                        sh "docker rmi ${ECR_REGISTRY}/${APP_NAME}:${service}-${env.IMAGE_TAG} || true"
                     }
                 }
             }
         }
         success {
-            echo "✅ Pipeline succeeded — ${APP_NAME} [${env.IMAGE_TAG}] deployed to ${params.ENVIRONMENT}"
+            echo "Pipeline succeeded — ${APP_NAME} [${env.IMAGE_TAG ?: 'unknown'}] on ${params.ENVIRONMENT}"
         }
         failure {
-            echo "❌ Pipeline failed — Branch: ${env.GIT_BRANCH_NAME} | Tag: ${env.IMAGE_TAG}"
+            echo "Pipeline failed — Branch: ${env.GIT_BRANCH_NAME ?: 'unknown'} | Tag: ${env.IMAGE_TAG ?: 'unknown'}"
         }
         unstable {
-            echo "⚠️ Pipeline unstable — check SonarQube or Trivy reports"
+            echo "Pipeline unstable — check SonarQube or Trivy reports"
         }
     }
 }
