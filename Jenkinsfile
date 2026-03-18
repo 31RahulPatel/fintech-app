@@ -84,17 +84,20 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
                     withSonarQubeEnv('SonarQube') {
-                        sh """
-                            sonar-scanner \
-                            -Dsonar.host.url=${SONAR_HOST_URL} \
-                            -Dsonar.token=\$SONAR_TOKEN \
-                            -Dsonar.projectKey=${APP_NAME} \
-                            -Dsonar.projectName=FintechOps \
-                            -Dsonar.projectVersion=${BUILD_NUMBER} \
-                            -Dsonar.sources=frontend/src,services \
-                            -Dsonar.exclusions=**/node_modules/**,**/coverage/**,**/build/**,**/dist/**,**/*.test.js,**/*.spec.js \
-                            -Dsonar.sourceEncoding=UTF-8
-                        """
+                        script {
+                            def scannerHome = tool name: 'SonarScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+                            sh """
+                                ${scannerHome}/bin/sonar-scanner \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.token=\$SONAR_TOKEN \
+                                -Dsonar.projectKey=${APP_NAME} \
+                                -Dsonar.projectName=FintechOps \
+                                -Dsonar.projectVersion=${BUILD_NUMBER} \
+                                -Dsonar.sources=frontend/src,services \
+                                -Dsonar.exclusions=**/node_modules/**,**/coverage/**,**/build/**,**/dist/**,**/*.test.js,**/*.spec.js \
+                                -Dsonar.sourceEncoding=UTF-8
+                            """
+                        }
                     }
                 }
             }
