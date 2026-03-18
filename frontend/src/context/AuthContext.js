@@ -31,6 +31,7 @@ export const AuthProvider = ({ children }) => {
       } catch (error) {
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
+        localStorage.removeItem('idToken');
         delete api.defaults.headers.common['Authorization'];
       }
     }
@@ -41,6 +42,7 @@ export const AuthProvider = ({ children }) => {
     const response = await api.post('/auth/cognito/login', { email, password });
     const { accessToken, refreshToken, idToken, user } = response.data;
     
+    localStorage.removeItem('idToken');
     localStorage.setItem('token', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
     if (idToken) localStorage.setItem('idToken', idToken);
@@ -60,6 +62,7 @@ export const AuthProvider = ({ children }) => {
     const response = await api.post('/auth/cognito/confirm', { email, code });
     const { accessToken, refreshToken, idToken, user } = response.data;
 
+    localStorage.removeItem('idToken');
     localStorage.setItem('token', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
     if (idToken) localStorage.setItem('idToken', idToken);

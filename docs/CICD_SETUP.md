@@ -1,33 +1,94 @@
-# FintechOps CI/CD Deployment Guide
+# Complete CI/CD Pipeline Setup - Quick Start Guide
 
-## Complete Pipeline: GitHub → Jenkins → SonarQube → Docker → Trivy → ECR → ArgoCD → EKS
+## 📋 Table of Contents
+
+1. [Project Overview](#overview)
+2. [Architecture](#architecture)
+3. [Prerequisites](#prerequisites)
+4. [Quick Start](#quick-start)
+5. [Detailed Setup](#detailed-setup)
+6. [Testing the Pipeline](#testing-the-pipeline)
+7. [Troubleshooting](#troubleshooting)
+8. [Maintenance](#maintenance)
+
+---
+
+## 🏗️ Overview
+
+FintechOps implements a complete enterprise CI/CD pipeline:
 
 ```
-┌──────────┐    Webhook    ┌──────────────────────────────────────────────────────┐
-│  GitHub   │─────────────→│  Jenkins (EC2 - Docker)                              │
-│  (Push)   │              │  ┌──────────┐ ┌──────────┐ ┌───────┐ ┌──────────┐   │
-└──────────┘              │  │ SonarQube│→│Docker    │→│ Trivy │→│ECR Push  │   │
-                           │  │ Scan     │ │Build     │ │ Scan  │ │          │   │
-                           │  └──────────┘ └──────────┘ └───────┘ └────┬─────┘   │
-                           │                                           │          │
-                           │  ┌──────────────────────────────┐         │          │
-                           │  │ Update k8s manifests (Git)   │←────────┘          │
-                           │  └──────────┬───────────────────┘                    │
-                           └──────────────┼───────────────────────────────────────┘
-                                          │ Git Push
-                                          ▼
-                           ┌──────────────────────────────┐
-                           │  ArgoCD (Auto-Sync)           │
-                           │  Watches Git → Deploys to EKS │
-                           └──────────┬───────────────────┘
-                                      ▼
-                           ┌──────────────────────────────┐
-                           │  EKS Cluster                  │
-                           │  ┌────────────────────────┐   │
-                           │  │ AWS ALB (Single)       │   │
-                           │  │  ├─ app.domain.com     │   │
-                           │  │  ├─ api.domain.com     │   │
-                           │  │  ├─ argocd.domain.com  │   │
+GitHub Repository
+       ↓ (Webhook)
+Jenkins Pipeline
+├─ Checkout Code
+├─ SonarQube Analysis
+├─ Quality Gate Check
+├─ Build 11 Docker Images (Parallel)
+├─ Trivy Security Scan
+├─ Push to AWS ECR
+└─ Deploy to AWS EKS (Kubernetes)
+```
+
+**Key Components:**
+- **Version Control**: GitHub
+- **Pipeline Orchestration**: Jenkins
+- **Code Quality**: SonarQube
+- **Container Scanning**: Trivy
+- **Container Registry**: AWS ECR
+- **Kubernetes Orchestration**: AWS EKS
+
+---
+
+## 🏛️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         GitHub Repository                                │
+│ ┌─────────────────────────────────────────────────────────────────────┐ │
+│ │ • Jenkinsfile (Pipeline definition)                               │ │
+│ │ • .gitignore (VCS exclusions)                                     │ │
+│ │ • sonar-project.properties (Code quality)                         │ │
+│ │ • .trivyignore (Security exceptions)                              │ │
+│ └─────────────────────────────────────────────────────────────────────┘ │
+└──────────────────────────────┬──────────────────────────────────────────┘
+                               │ Webhook Event
+                               ↓
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    Jenkins CI/CD Orchestrator                            │
+│ ┌────────────────┐ ┌──────────────┐ ┌────────────────────────────────┐ │
+│ │   Checkout     │→│  SonarQube   │→│  Quality Gate (Pass/Fail)      │ │
+│ └────────────────┘ └──────────────┘ └────────────────────────────────┘ │
+│ ┌────────────────┐ ┌──────────────┐ ┌────────────────────────────────┐ │
+│ │ Build Images   │→│  Trivy Scan  │→│  Security Check (Pass/Fail)    │ │
+│ │  (Parallel)    │ │ (11 services)│ └────────────────────────────────┘ │
+│ └────────────────┘ └──────────────┘                                     │
+│                        ↓                                                 │
+│          ┌──────────────────────────────┐                               │
+│          │  Push to AWS ECR Repository  │                               │
+│          └──────────────────────────────┘                               │
+└──────────────────────────────┬──────────────────────────────────────────┘
+                               ↓
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     AWS Infrastructure                                    │
+│ ┌──────────────────────┐      ┌─────────────────────────────────────┐   │
+│ │   AWS ECR            │      │   AWS EKS Kubernetes Cluster        │   │
+│ │  (Container Images)  │──────│  ┌───────────────────────────────┐ │   │
+│ │                      │      │  │  Microservices Deployments:   │ │   │
+│ │ • frontend           │      │  │  • Frontend (React)           │ │   │
+│ │ • api-gateway        │      │  │  • API Gateway                │ │   │
+│ │ • auth-service       │      │  │  • Auth Service               │ │   │
+│ │ • user-service       │      │  │  • Market Service             │ │   │
+│ │ • market-service     │      │  │  • News Service               │ │   │
+│ │ • ... (11 total)     │      │  │  • ... (11 total)             │ │   │
+│ │                      │      │  └───────────────────────────────┘ │   │
+│ └──────────────────────┘      │                                     │   │
+│                               │ ┌─────────────────────────────────┐ │   │
+│                               │ │  Load Balancer → Route 53 DNS   │ │   │
+│                               │ └─────────────────────────────────┘ │   │
+│                               └─────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────┘
+```
                            │  │  ├─ grafana.domain.com │   │
                            │  │  └─ prometheus.domain   │   │
                            │  └────────────────────────┘   │

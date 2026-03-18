@@ -95,6 +95,100 @@ temp/
 monitoring/data/
 prometheus_data/
 grafana_data/
+loki_data/
+
+# ==============================
+# Jenkins / CI-CD
+# ==============================
+.jenkins/
+jenkins_home/
+*.xml.bak
+*.pluginlist
+
+# ==============================
+# SonarQube / Code Quality
+# ==============================
+.sonar/
+sonarqube_data/
+.scannerwork/
+sonar-report.json
+
+# ==============================
+# Trivy / Security Scanning
+# ==============================
+trivy-*.txt
+trivy-*.json
+trivy-cache/
+.trivy/
+
+# ==============================
+# AWS / Kubernetes
+# ==============================
+kubeconfig
+*.kubeconfig
+aws-credentials
+aws-config
+*.cacert
+.kube/
+.aws/
+.terraform/
+*.tfstate*
+.terraform.lock.hcl
+
+# ==============================
+# Report files
+# ==============================
+Report.html
+Report.pdf
+Report.md
+junit.xml
+test-results/
+coverage/
+
+# ==============================
+# Build artifacts
+# ==============================
+.tsbuildinfo
+*.d.ts
+*.d.map
+.eslintcache
+.parcel-cache
+.cache
+
+# ==============================
+# Docker build cache
+# ==============================
+.docker/
+docker-cache/
+.buildkit/
+
+# ==============================
+# Python
+# ==============================
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+ENV/
+env/
+.venv
+
+# ==============================
+# Temporary/Lock files
+# ==============================
+*.lock
+*.swp
+*.swo
+*~
+.lock
+
+# ==============================
+# IDE extensions & workspace
+# ==============================
+.devcontainer/
+.copilot/
+.instructions.md
+.prompt.md
 
 # ==============================
 # Services to exclude (push one at a time)
