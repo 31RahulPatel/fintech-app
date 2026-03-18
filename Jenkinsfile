@@ -25,8 +25,8 @@ pipeline {
     }
 
     environment {
-        AWS_ACCOUNT_ID = '196390795701'
-        AWS_REGION     = 'ap-south-1'
+        AWS_ACCOUNT_ID = '836548370285'
+        AWS_REGION     = 'us-east-1'
         APP_NAME       = 'fintechops'
         GITHUB_REPO    = 'https://github.com/31RahulPatel/fintech-app.git'
         ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
