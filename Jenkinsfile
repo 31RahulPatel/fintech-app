@@ -120,11 +120,10 @@ pipeline {
         stage('ECR Login') {
             steps {
                 withCredentials([
-                    usernamePassword(
-                        credentialsId: 'aws-credentials',
-                        usernameVariable: 'AWS_ACCESS_KEY_ID',
-                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                    )
+                    [$class: 'AmazonWebServicesCredentialsBinding',
+                     credentialsId: 'aws-credentials',
+                     accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']
                 ]) {
                     sh """
                         aws ecr get-login-password --region ${AWS_REGION} | \
@@ -140,11 +139,10 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 withCredentials([
-                    usernamePassword(
-                        credentialsId: 'aws-credentials',
-                        usernameVariable: 'AWS_ACCESS_KEY_ID',
-                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-                    )
+                    [$class: 'AmazonWebServicesCredentialsBinding',
+                     credentialsId: 'aws-credentials',
+                     accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']
                 ]) {
                     script {
                         def serviceContextMap = [
@@ -251,43 +249,6 @@ pipeline {
             }
         }
 
-        // ===============================
-        // UPDATE K8S MANIFESTS
-        // ===============================
-        stage('Update K8s Manifests') {
-            when {
-                anyOf {
-                    branch 'main'
-                    branch 'staging'
-                    expression { return params.ENVIRONMENT == 'prod' }
-                }
-            }
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
-                    script {
-                        def services = env.BUILT_SERVICES.split(',')
-                        sh "git config user.email 'jenkins@fintechops.internal'"
-                        sh "git config user.name 'Jenkins CI'"
-
-                        services.each { service ->
-                            def svc = service
-                            sh """
-                                FILE=infrastructure/kubernetes/${params.ENVIRONMENT}/${svc}-deployment.yaml
-                                if [ -f "\$FILE" ]; then
-                                    sed -i "s|${ECR_REGISTRY}/${APP_NAME}:${svc}-[^ ]*|${ECR_REGISTRY}/${APP_NAME}:${svc}-${env.IMAGE_TAG}|g" \$FILE
-                                fi
-                            """
-                        }
-
-                        sh """
-                            git add infrastructure/kubernetes/${params.ENVIRONMENT}/ || true
-                            git diff --cached --quiet || git commit -m "ci: update image tags to ${env.IMAGE_TAG} [skip ci]"
-                            git push https://\${GIT_USER}:\${GIT_TOKEN}@github.com/31RahulPatel/fintech-app.git HEAD:${env.GIT_BRANCH_NAME} || true
-                        """
-                    }
-                }
-            }
-        }
     }
 
     post {
