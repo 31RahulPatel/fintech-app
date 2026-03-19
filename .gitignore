@@ -190,15 +190,3 @@ env/
 .instructions.md
 .prompt.md
 
-# ==============================
-# Services to exclude (push one at a time)
-# ==============================
-services/admin-service/
-services/auth-service/
-services/blog-service/
-services/calculator-service/
-services/chatbot-service/
-services/email-service/
-services/market-service/
-services/news-service/
-services/user-service/
