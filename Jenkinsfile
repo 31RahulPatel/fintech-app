@@ -214,25 +214,20 @@ pipeline {
             steps {
                 script {
                     def services = env.BUILT_SERVICES.split(',')
-                    def parallelScans = [:]
+                    def imageName = "${ECR_REGISTRY}/${APP_NAME}"
 
-                    services.each { service ->
-                        def svc = service
-                        parallelScans[svc] = {
-                            sh """
-                                trivy image \
-                                --timeout 10m \
-                                --exit-code 0 \
-                                --severity CRITICAL,HIGH \
-                                --ignore-unfixed \
-                                --format table \
-                                --output trivy-${svc}.txt \
-                                ${ECR_REGISTRY}/${APP_NAME}:${svc}-${env.IMAGE_TAG}
-                            """
-                        }
+                    services.each { svc ->
+                        sh """
+                            trivy image \
+                            --timeout 10m \
+                            --exit-code 0 \
+                            --severity CRITICAL,HIGH \
+                            --ignore-unfixed \
+                            --format table \
+                            --output trivy-${svc}.txt \
+                            ${imageName}:${svc}-${env.IMAGE_TAG}
+                        """
                     }
-
-                    parallel parallelScans
                 }
             }
         }
