@@ -47,7 +47,12 @@ pipeline {
         // ===============================
         stage('Checkout') {
             steps {
-                checkout scm
+                cleanWs()
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[url: 'https://github.com/31RahulPatel/fintech-app.git']]
+                ])
                 script {
                     env.GIT_COMMIT_SHORT = sh(
                         script: "git rev-parse --short HEAD",
