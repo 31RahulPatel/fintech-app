@@ -70,6 +70,10 @@ pipeline {
                     echo "Commit: ${env.GIT_COMMIT_SHORT}"
                     echo "Tag:    ${env.IMAGE_TAG}"
                     echo "Msg:    ${env.GIT_COMMIT_MSG}"
+                    
+                    // Verify services directory exists
+                    sh "ls -la"
+                    sh "ls -la services/ || echo 'services directory not found'"
                 }
             }
         }
