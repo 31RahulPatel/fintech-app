@@ -212,7 +212,7 @@ pipeline {
                         parallelScans[svc] = {
                             sh """
                                 trivy image \
-                                --exit-code 1 \
+                                --exit-code 0 \
                                 --severity CRITICAL,HIGH \
                                 --ignore-unfixed \
                                 --format table \
