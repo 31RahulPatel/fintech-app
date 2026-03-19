@@ -30,7 +30,7 @@ pipeline {
         APP_NAME       = 'fintechops'
         GITHUB_REPO    = 'https://github.com/31RahulPatel/fintech-app.git'
         ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-        SONAR_HOST_URL = "http://3.86.88.168:9000"
+        SONAR_HOST_URL = "http://100.26.189.213:9000"
     }
 
     options {
