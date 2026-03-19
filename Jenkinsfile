@@ -221,6 +221,7 @@ pipeline {
                         parallelScans[svc] = {
                             sh """
                                 trivy image \
+                                --timeout 10m \
                                 --exit-code 0 \
                                 --severity CRITICAL,HIGH \
                                 --ignore-unfixed \
