@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: fintechops-api-gateway:latest
+          image: 836548370285.dkr.ecr.us-east-1.amazonaws.com/fintechops:api-gateway-latest
           ports:
             - containerPort: 3000
           envFrom:
