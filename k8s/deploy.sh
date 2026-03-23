@@ -30,15 +30,31 @@ kubectl create namespace fintechops-staging --dry-run=client -o yaml | kubectl a
 echo ""
 echo "🔐 Applying production secrets..."
 if [ -f "k8s/base/secrets-production.yaml" ]; then
-    kubectl apply -f k8s/base/secrets-production.yaml -n fintechops
-    kubectl apply -f k8s/base/secrets-production.yaml -n fintechops-production
-    kubectl apply -f k8s/base/secrets-production.yaml -n fintechops-staging
+    # Apply to base namespace
+    kubectl apply -f k8s/base/secrets-production.yaml
+    
+    # Copy secret to production namespace
+    kubectl get secret fintechops-secrets -n fintechops -o yaml | \
+        sed 's/namespace: fintechops/namespace: fintechops-production/' | \
+        kubectl apply -f -
+    
+    # Copy secret to staging namespace
+    kubectl get secret fintechops-secrets -n fintechops -o yaml | \
+        sed 's/namespace: fintechops/namespace: fintechops-staging/' | \
+        kubectl apply -f -
+    
     echo "✅ Secrets applied successfully"
 else
     echo "⚠️  secrets-production.yaml not found. Using template..."
-    kubectl apply -f k8s/base/secrets.yaml -n fintechops
-    kubectl apply -f k8s/base/secrets.yaml -n fintechops-production
-    kubectl apply -f k8s/base/secrets.yaml -n fintechops-staging
+    kubectl apply -f k8s/base/secrets.yaml
+    
+    kubectl get secret fintechops-secrets -n fintechops -o yaml | \
+        sed 's/namespace: fintechops/namespace: fintechops-production/' | \
+        kubectl apply -f -
+    
+    kubectl get secret fintechops-secrets -n fintechops -o yaml | \
+        sed 's/namespace: fintechops/namespace: fintechops-staging/' | \
+        kubectl apply -f -
 fi
 
 # Step 3: Apply ArgoCD applications
