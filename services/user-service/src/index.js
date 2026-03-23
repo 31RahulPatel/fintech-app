@@ -23,9 +23,21 @@ app.get('/health', (req, res) => {
 // Routes
 app.use('/', routes);
 
-// MongoDB connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/fintechops')
-  .then(() => logger.info('MongoDB connected'))
+// MongoDB connection with timeout configurations
+const mongoOptions = {
+  serverSelectionTimeoutMS: 30000, // 30 seconds
+  socketTimeoutMS: 45000, // 45 seconds
+  connectTimeoutMS: 30000, // 30 seconds
+  maxPoolSize: 10,
+  minPoolSize: 2,
+  maxIdleTimeMS: 30000,
+  waitQueueTimeoutMS: 30000,
+  retryWrites: true,
+  retryReads: true
+};
+
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/fintechops', mongoOptions)
+  .then(() => logger.info('MongoDB connected with timeout configurations'))
   .catch(err => logger.error('MongoDB connection error:', err));
 
 // PostgreSQL connection
@@ -37,7 +49,13 @@ const sequelize = new Sequelize(
     host: process.env.POSTGRES_HOST || 'localhost',
     port: process.env.POSTGRES_PORT || 5432,
     dialect: 'postgres',
-    logging: msg => logger.debug(msg)
+    logging: msg => logger.debug(msg),
+    pool: {
+      max: 10,
+      min: 2,
+      acquire: 30000,
+      idle: 10000
+    }
   }
 );
 
