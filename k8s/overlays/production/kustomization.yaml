@@ -10,11 +10,11 @@ commonLabels:
   environment: production
 
 patches:
-  # Higher replicas for production
+  # Single replica for testing
   - patch: |-
       - op: replace
         path: /spec/replicas
-        value: 3
+        value: 1
     target:
       kind: Deployment
       name: ".*"
@@ -22,10 +22,10 @@ patches:
   - patch: |-
       - op: replace
         path: /spec/minReplicas
-        value: 3
+        value: 1
       - op: replace
         path: /spec/maxReplicas
-        value: 20
+        value: 5
     target:
       kind: HorizontalPodAutoscaler
       name: ".*"
