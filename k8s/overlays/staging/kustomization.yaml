@@ -6,8 +6,6 @@ namespace: fintechops-staging
 resources:
   - ../../base
 
-nameSuffix: -staging
-
 commonLabels:
   environment: staging
 

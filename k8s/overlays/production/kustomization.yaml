@@ -6,8 +6,6 @@ namespace: fintechops-production
 resources:
   - ../../base
 
-nameSuffix: -production
-
 commonLabels:
   environment: production
 
