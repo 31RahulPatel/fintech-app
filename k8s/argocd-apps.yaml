@@ -21,7 +21,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: <YOUR_GITHUB_REPO_URL>
+    repoURL: https://github.com/31RahulPatel/fintech-app.git
     targetRevision: develop
     path: k8s/overlays/staging
   destination:
@@ -57,7 +57,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: <YOUR_GITHUB_REPO_URL>
+    repoURL: https://github.com/31RahulPatel/fintech-app.git
     targetRevision: main
     path: k8s/overlays/production
   destination:

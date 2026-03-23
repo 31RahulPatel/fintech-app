@@ -135,6 +135,11 @@ aws-config
 *.tfstate*
 .terraform.lock.hcl
 
+# Kubernetes secrets (production values)
+k8s/base/secrets-production.yaml
+k8s/overlays/*/secrets-production.yaml
+**/secrets-production.yaml
+
 # ==============================
 # Report files
 # ==============================
