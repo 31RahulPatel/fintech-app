@@ -22,7 +22,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/31RahulPatel/fintech-app.git
-    targetRevision: develop
+    targetRevision: main
     path: k8s/overlays/staging
   destination:
     server: https://kubernetes.default.svc

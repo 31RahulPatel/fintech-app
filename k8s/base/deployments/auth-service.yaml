@@ -17,9 +17,12 @@ spec:
         app: auth-service
         tier: backend
     spec:
+      imagePullSecrets:
+        - name: ecr-secret
       containers:
         - name: auth-service
-          image: fintechops-auth-service:latest
+          image: 836548370285.dkr.ecr.us-east-1.amazonaws.com/fintechops:auth-service-latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 3001
           envFrom:

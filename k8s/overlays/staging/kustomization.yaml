@@ -34,7 +34,7 @@ patches:
 
 configMapGenerator:
   - name: fintechops-config
-    behavior: merge
+    behavior: replace
     literals:
       - NODE_ENV=staging
       - LOG_LEVEL=debug
