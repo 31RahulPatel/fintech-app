@@ -38,36 +38,36 @@ patches:
 # Tags: <service>-<build_number>-<commit_hash>
 # ============================================
 images:
-  - name: fintechops-frontend
+  - name: fintechops/frontend
     newName: 836548370285.dkr.ecr.us-east-1.amazonaws.com/fintechops
     newTag: frontend-latest
-  - name: fintechops-api-gateway
+  - name: fintechops/api-gateway
     newName: 836548370285.dkr.ecr.us-east-1.amazonaws.com/fintechops
     newTag: api-gateway-latest
-  - name: fintechops-auth-service
+  - name: fintechops/auth-service
     newName: 836548370285.dkr.ecr.us-east-1.amazonaws.com/fintechops
     newTag: auth-service-latest
-  - name: fintechops-user-service
+  - name: fintechops/user-service
     newName: 836548370285.dkr.ecr.us-east-1.amazonaws.com/fintechops
     newTag: user-service-latest
-  - name: fintechops-calculator-service
+  - name: fintechops/calculator-service
     newName: 836548370285.dkr.ecr.us-east-1.amazonaws.com/fintechops
     newTag: calculator-service-latest
-  - name: fintechops-market-service
+  - name: fintechops/market-service
     newName: 836548370285.dkr.ecr.us-east-1.amazonaws.com/fintechops
     newTag: market-service-latest
-  - name: fintechops-news-service
+  - name: fintechops/news-service
     newName: 836548370285.dkr.ecr.us-east-1.amazonaws.com/fintechops
     newTag: news-service-latest
-  - name: fintechops-blog-service
+  - name: fintechops/blog-service
     newName: 836548370285.dkr.ecr.us-east-1.amazonaws.com/fintechops
     newTag: blog-service-latest
-  - name: fintechops-chatbot-service
+  - name: fintechops/chatbot-service
     newName: 836548370285.dkr.ecr.us-east-1.amazonaws.com/fintechops
     newTag: chatbot-service-latest
-  - name: fintechops-email-service
+  - name: fintechops/email-service
     newName: 836548370285.dkr.ecr.us-east-1.amazonaws.com/fintechops
     newTag: email-service-latest
-  - name: fintechops-admin-service
+  - name: fintechops/admin-service
     newName: 836548370285.dkr.ecr.us-east-1.amazonaws.com/fintechops
     newTag: admin-service-latest
