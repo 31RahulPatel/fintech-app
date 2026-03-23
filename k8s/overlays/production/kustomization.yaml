@@ -32,13 +32,6 @@ patches:
       kind: HorizontalPodAutoscaler
       name: ".*"
 
-configMapGenerator:
-  - name: fintechops-config
-    behavior: replace
-    literals:
-      - NODE_ENV=production
-      - LOG_LEVEL=info
-
 # ============================================
 # Image tags - Updated automatically by Jenkins CI
 # Single ECR repo: <AWS_ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/fintechops
