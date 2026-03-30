@@ -10,20 +10,19 @@ class SchedulerService {
   }
 
   getAuthHeaders() {
-    // For AWS API Gateway, use the access token from Cognito
-    const token = localStorage.getItem('token');
+    // Use Cognito ID token for API Gateway authorizer, fall back to access token
+    const accessToken = localStorage.getItem('token');
     const idToken = localStorage.getItem('idToken');
+    const authToken = idToken || accessToken;
     
-    if (!token && !idToken) {
-      console.warn('No authentication token found');
+    if (!authToken) {
+      console.warn('No access token found for scheduler API');
+      throw new Error('Please login to access scheduler features');
     }
     
     return {
       'Content-Type': 'application/json',
-      // Use access token for API Gateway authorization
-      ...(token && { 'Authorization': `Bearer ${token}` }),
-      // Also include user info if available
-      ...(idToken && { 'X-ID-Token': idToken })
+      'Authorization': `Bearer ${authToken}`
     };
   }
 
@@ -41,15 +40,22 @@ class SchedulerService {
 
   // Create a new scheduled prompt
   async createSchedule(scheduleData) {
-    const url = this.useAws ? `${this.baseUrl}/schedules` : this.baseUrl;
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: this.getAuthHeaders(),
-      body: JSON.stringify(scheduleData)
-    });
-    
-    return this.handleResponse(response);
+    try {
+      const url = this.useAws ? `${this.baseUrl}/schedules` : this.baseUrl;
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(scheduleData)
+      });
+      
+      return this.handleResponse(response);
+    } catch (error) {
+      if (error.message.includes('login')) {
+        throw error; // Re-throw auth errors
+      }
+      throw new Error('Failed to create schedule. Please try again.');
+    }
   }
 
   // Get all schedules for current user
