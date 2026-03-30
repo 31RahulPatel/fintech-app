@@ -25,10 +25,22 @@ const ScheduleList = ({ isOpen, onClose, onCreateNew, onRefresh }) => {
     try {
       setIsLoading(true);
       setError(null);
+      
+      // Check if user is authenticated
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Please login to view schedules');
+        return;
+      }
+      
       const data = await schedulerService.getSchedules();
       setSchedules(data || []);
     } catch (err) {
-      setError('Failed to load schedules');
+      if (err.message.includes('Unauthorized')) {
+        setError('Please login to access scheduler features');
+      } else {
+        setError('Failed to load schedules');
+      }
       console.error(err);
     } finally {
       setIsLoading(false);
