@@ -17,7 +17,12 @@ app.use(express.json());
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'healthy', service: 'auth-service', timestamp: new Date().toISOString() });
+  res.status(200).json({ 
+    status: 'healthy', 
+    service: 'auth-service', 
+    timestamp: new Date().toISOString(),
+    port: PORT 
+  });
 });
 
 // Routes
