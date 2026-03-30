@@ -6,8 +6,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies with optimizations
+RUN npm ci --only=production --no-audit --no-fund
 
 # Copy source code
 COPY . .

@@ -35,7 +35,7 @@ pipeline {
 
     options {
         buildDiscarder(logRotator(numToKeepStr: '15'))
-        timeout(time: 1, unit: 'HOURS')
+        timeout(time: 2, unit: 'HOURS')
         disableConcurrentBuilds()
         timestamps()
     }
