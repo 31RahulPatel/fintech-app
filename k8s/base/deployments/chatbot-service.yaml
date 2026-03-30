@@ -23,7 +23,7 @@ spec:
         - name: ecr-secret
       containers:
         - name: chatbot-service
-          image: 836548370285.dkr.ecr.us-east-1.amazonaws.com/fintechops:chatbot-service-latest
+          image: 836548370285.dkr.ecr.us-east-1.amazonaws.com/fintechops:chatbot-service-15-74193dc
           ports:
             - containerPort: 3008
           env:

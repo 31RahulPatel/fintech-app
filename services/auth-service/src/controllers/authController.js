@@ -206,6 +206,15 @@ exports.login = async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    // Check if user is verified for regular login
+    if (!user.isVerified) {
+      return res.status(401).json({ 
+        error: 'Please verify your email before logging in',
+        requiresVerification: true,
+        email: user.email
+      });
+    }
+
     // Verify password
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
@@ -459,32 +468,68 @@ exports.cognitoLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check if Cognito is configured
-    if (!process.env.AWS_COGNITO_USER_POOL_ID || !process.env.AWS_COGNITO_CLIENT_ID) {
-      logger.info('Cognito not configured, falling back to regular login');
-      return exports.login(req, res);
+    // First try Cognito authentication
+    if (process.env.AWS_COGNITO_USER_POOL_ID || process.env.COGNITO_USER_POOL_ID) {
+      try {
+        const result = await cognitoService.signIn(email, password);
+        
+        // Cognito auth successful, now check/create local user
+        let user = await User.findOne({ email });
+        if (!user) {
+          // Create user record for successful Cognito authentication
+          user = await User.create({
+            email,
+            firstName: email.split('@')[0],
+            lastName: 'User',
+            role: 'user',
+            isVerified: true,
+            cognitoSub: result.userSub || 'cognito-user',
+            lastLogin: new Date(),
+            password: await bcrypt.hash('cognito-managed-password', 12)
+          });
+          logger.info(`Auto-created user record for Cognito user: ${email}`);
+        } else {
+          // Update existing user
+          user.lastLogin = new Date();
+          user.isVerified = true;
+          await user.save();
+        }
+        
+        const tokens = generateTokens({ id: user._id, email: user.email, role: user.role });
+        
+        return res.json({
+          message: 'Login successful',
+          user: {
+            id: user._id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role
+          },
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          idToken: result.idToken
+        });
+      } catch (cognitoError) {
+        logger.warn(`Cognito authentication failed: ${cognitoError.message}`);
+        // Continue to regular login fallback
+      }
     }
 
-    const result = await cognitoService.signIn(email, password);
-
-    // Update local user last login and get user data
-    const user = await User.findOneAndUpdate(
-      { email },
-      { lastLogin: new Date() },
-      { new: true }
-    );
-
+    // Fallback to regular login
+    let user = await User.findOne({ email });
     if (!user) {
-      logger.warn(`Cognito auth succeeded but user not found locally: ${email}`);
-      return res.status(400).json({ 
-        error: 'User account not found. Please sign up first.',
-        requiresSignup: true 
-      });
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    logger.info(`Cognito user logged in: ${email}`);
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
 
-    // Return local JWT tokens + user data for consistency
+    user.lastLogin = new Date();
+    await user.save();
+
     const tokens = generateTokens({ id: user._id, email: user.email, role: user.role });
 
     res.json({
@@ -496,15 +541,12 @@ exports.cognitoLogin = async (req, res) => {
         lastName: user.lastName,
         role: user.role
       },
-      ...tokens,
-      // Include Cognito ID token for AWS API Gateway
-      idToken: result.idToken
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken
     });
   } catch (error) {
-    logger.error(`Cognito login error: ${error.message}`);
-    // Fallback to regular login if Cognito fails
-    logger.info('Cognito login failed, falling back to regular login');
-    return exports.login(req, res);
+    logger.error(`Login error: ${error.message}`);
+    res.status(500).json({ error: 'Login failed' });
   }
 };
 

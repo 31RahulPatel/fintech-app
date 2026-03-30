@@ -11,11 +11,23 @@ const CLIENT_ID = process.env.AWS_COGNITO_CLIENT_ID || process.env.COGNITO_CLIEN
 const CLIENT_SECRET = process.env.AWS_COGNITO_CLIENT_SECRET || process.env.COGNITO_CLIENT_SECRET;
 const USER_POOL_ID = process.env.AWS_COGNITO_USER_POOL_ID || process.env.COGNITO_USER_POOL_ID;
 
+// Validate required Cognito configuration
+if (!CLIENT_ID || !USER_POOL_ID) {
+  console.warn('⚠️  Cognito configuration incomplete. CLIENT_ID or USER_POOL_ID missing.');
+}
+
+if (!CLIENT_SECRET) {
+  console.warn('⚠️  Cognito CLIENT_SECRET missing. Some operations may fail.');
+}
+
 const cognito = new AWS.CognitoIdentityServiceProvider();
 
 class CognitoService {
   // Compute SECRET_HASH = Base64(HMAC_SHA256(clientSecret, username + clientId))
   _secretHash(username) {
+    if (!CLIENT_SECRET) {
+      throw new Error('CLIENT_SECRET is required for Cognito operations');
+    }
     return crypto
       .createHmac('SHA256', CLIENT_SECRET)
       .update(username + CLIENT_ID)
