@@ -16,7 +16,7 @@ spec:
         app: chatbot-service
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "3007"
+        prometheus.io/port: "3008"
         prometheus.io/path: "/metrics"
     spec:
       imagePullSecrets:
@@ -25,7 +25,7 @@ spec:
         - name: chatbot-service
           image: 836548370285.dkr.ecr.us-east-1.amazonaws.com/fintechops:chatbot-service-latest
           ports:
-            - containerPort: 3007
+            - containerPort: 3008
           env:
             - name: NODE_ENV
               valueFrom:
@@ -57,13 +57,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /health
-              port: 3007
+              port: 3008
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /health
-              port: 3007
+              port: 3008
             initialDelaySeconds: 5
             periodSeconds: 5
 ---
@@ -77,5 +77,5 @@ spec:
     app: chatbot-service
   ports:
     - protocol: TCP
-      port: 3007
-      targetPort: 3007
+      port: 3008
+      targetPort: 3008

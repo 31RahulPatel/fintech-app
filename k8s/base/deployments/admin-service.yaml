@@ -16,7 +16,7 @@ spec:
         app: admin-service
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "3009"
+        prometheus.io/port: "3010"
         prometheus.io/path: "/metrics"
     spec:
       imagePullSecrets:
@@ -25,7 +25,7 @@ spec:
         - name: admin-service
           image: 836548370285.dkr.ecr.us-east-1.amazonaws.com/fintechops:admin-service-latest
           ports:
-            - containerPort: 3009
+            - containerPort: 3010
           env:
             - name: NODE_ENV
               valueFrom:
@@ -62,13 +62,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /health
-              port: 3009
+              port: 3010
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /health
-              port: 3009
+              port: 3010
             initialDelaySeconds: 5
             periodSeconds: 5
 ---
@@ -82,5 +82,5 @@ spec:
     app: admin-service
   ports:
     - protocol: TCP
-      port: 3009
-      targetPort: 3009
+      port: 3010
+      targetPort: 3010
