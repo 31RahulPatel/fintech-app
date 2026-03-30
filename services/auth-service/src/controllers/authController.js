@@ -413,6 +413,9 @@ exports.cognitoSignup = async (req, res) => {
           { cognitoSub: result.userSub, password: hashedPassword, firstName, lastName, phone, isVerified: false },
           { new: true }
         );
+        if (!mongoUser) {
+          throw new Error(`Failed to update existing user record for ${email}`);
+        }
         logger.warn(`MongoDB duplicate for ${email}, updated existing record`);
       } else {
         throw mongoErr;
@@ -451,10 +454,16 @@ exports.cognitoSignup = async (req, res) => {
   }
 };
 
-// Cognito Login
+// Cognito Login with fallback to regular login
 exports.cognitoLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    // Check if Cognito is configured
+    if (!process.env.AWS_COGNITO_USER_POOL_ID || !process.env.AWS_COGNITO_CLIENT_ID) {
+      logger.info('Cognito not configured, falling back to regular login');
+      return exports.login(req, res);
+    }
 
     const result = await cognitoService.signIn(email, password);
 
@@ -464,6 +473,10 @@ exports.cognitoLogin = async (req, res) => {
       { lastLogin: new Date() },
       { new: true }
     );
+
+    if (!user) {
+      return res.status(400).json({ error: 'User not found locally' });
+    }
 
     logger.info(`Cognito user logged in: ${email}`);
 
@@ -485,7 +498,9 @@ exports.cognitoLogin = async (req, res) => {
     });
   } catch (error) {
     logger.error(`Cognito login error: ${error.message}`);
-    res.status(401).json({ error: error.message || 'Login failed' });
+    // Fallback to regular login if Cognito fails
+    logger.info('Cognito login failed, falling back to regular login');
+    return exports.login(req, res);
   }
 };
 

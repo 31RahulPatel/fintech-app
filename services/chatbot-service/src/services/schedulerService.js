@@ -52,6 +52,11 @@ class SchedulerService {
 
   addSchedule(schedule) {
     try {
+      if (!schedule || !schedule._id) {
+        logger.error('Cannot add schedule: schedule or schedule._id is null');
+        return;
+      }
+
       const cronExpression = this.getCronExpression(schedule);
       
       // Remove existing job if any
@@ -92,6 +97,11 @@ class SchedulerService {
 
   async executeSchedule(schedule) {
     try {
+      if (!schedule || !schedule._id) {
+        logger.error('Cannot execute schedule: schedule or schedule._id is null');
+        return;
+      }
+
       logger.info(`Executing scheduled prompt: ${schedule._id}`);
 
       // Check if schedule has ended
