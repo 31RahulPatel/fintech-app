@@ -12,6 +12,10 @@ RUN npm install --no-audit --no-fund
 # Copy source code
 COPY . .
 
+# Build-time env for React app endpoint configuration
+ARG REACT_APP_SCHEDULER_API_URL
+ENV REACT_APP_SCHEDULER_API_URL=${REACT_APP_SCHEDULER_API_URL}
+
 # Build the application
 RUN npm run build
 

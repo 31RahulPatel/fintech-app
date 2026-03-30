@@ -5,7 +5,7 @@
 const LOCAL_API_URL = 'http://localhost:3003/api';
 
 // AWS API Gateway (deployed endpoint)
-const AWS_SCHEDULER_API_URL = process.env.REACT_APP_SCHEDULER_API_URL || 'https://zl1co1f9u8.execute-api.us-east-1.amazonaws.com/prod';
+const AWS_SCHEDULER_API_URL = 'https://lf9djrx74e.execute-api.us-east-1.amazonaws.com/prod';
 
 // Use AWS if configured, otherwise fall back to local
 export const SCHEDULER_API_URL = AWS_SCHEDULER_API_URL || `${LOCAL_API_URL}/scheduled-prompts`;

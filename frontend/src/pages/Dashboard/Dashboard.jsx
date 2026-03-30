@@ -61,7 +61,7 @@ const Dashboard = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <h1>Welcome back, {user?.name || 'Investor'}!</h1>
+            <h1>Welcome back, {user?.profile?.firstName || user?.email?.split('@')[0] || 'Investor'}!</h1>
             <p>Here's your portfolio overview</p>
           </motion.div>
         </div>

@@ -89,7 +89,7 @@ const Navbar = () => {
                 <div className="user-avatar">
                   {user?.profile?.firstName?.[0] || user?.email?.[0]?.toUpperCase() || 'U'}
                 </div>
-                <span className="user-name">{user?.profile?.firstName || 'User'}</span>
+                <span className="user-name">{user?.profile?.firstName || user?.email?.split('@')[0] || 'User'}</span>
                 <FiChevronDown className={`dropdown-arrow ${dropdownOpen === 'user' ? 'open' : ''}`} />
               </button>
               
@@ -103,7 +103,7 @@ const Navbar = () => {
                     transition={{ duration: 0.2 }}
                   >
                     <div className="dropdown-header">
-                      <p className="dropdown-email">{user?.email}</p>
+                      <p className="dropdown-email">{user?.email || 'user@example.com'}</p>
                       <span className={`subscription-badge ${user?.subscription?.plan === 'premium' ? 'premium' : 'free'}`}>
                         {user?.subscription?.plan === 'premium' ? 'Premium' : 'Free'}
                       </span>
