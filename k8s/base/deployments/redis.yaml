@@ -63,8 +63,6 @@ spec:
     - metadata:
         name: redis-data
       spec:
-      imagePullSecrets:
-        - name: ecr-secret
         accessModes: ["ReadWriteOnce"]
         storageClassName: gp3
         resources:

@@ -6,7 +6,7 @@ namespace: fintechops
 resources:
   - namespace.yaml
   - configmap.yaml
-  - secrets.yaml
+  - secrets-production.yaml
   - storage-class.yaml
   # Application Services
   - deployments/api-gateway.yaml

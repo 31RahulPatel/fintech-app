@@ -33,10 +33,7 @@ spec:
             - name: POSTGRES_USER
               value: "fintechops"
             - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: fintechops-secrets
-                  key: POSTGRES_PASSWORD
+              value: "fintechops123"
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
           volumeMounts:
@@ -69,8 +66,6 @@ spec:
     - metadata:
         name: postgres-data
       spec:
-      imagePullSecrets:
-        - name: ecr-secret
         accessModes: ["ReadWriteOnce"]
         storageClassName: gp3
         resources:

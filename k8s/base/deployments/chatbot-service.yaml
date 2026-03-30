@@ -32,6 +32,8 @@ spec:
                 configMapKeyRef:
                   name: fintechops-config
                   key: NODE_ENV
+            - name: PORT
+              value: "3008"
             - name: MONGODB_URI
               valueFrom:
                 secretKeyRef:
@@ -47,6 +49,11 @@ spec:
                 secretKeyRef:
                   name: fintechops-secrets
                   key: OPENAI_API_KEY
+            - name: GROQ_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: fintechops-secrets
+                  key: GROQ_API_KEY
           resources:
             requests:
               memory: "256Mi"

@@ -32,6 +32,8 @@ spec:
                 configMapKeyRef:
                   name: fintechops-config
                   key: NODE_ENV
+            - name: PORT
+              value: "3005"
             - name: MONGODB_URI
               valueFrom:
                 secretKeyRef:

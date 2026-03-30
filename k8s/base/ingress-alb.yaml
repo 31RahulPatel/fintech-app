@@ -88,7 +88,7 @@ spec:
           service:
             name: calculator-service
             port:
-              number: 3007
+              number: 3003
       
       # Chatbot Service
       - path: /chat

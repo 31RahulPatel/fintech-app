@@ -25,9 +25,9 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: auth-service
+            name: api-gateway
             port:
-              number: 3001
+              number: 3000
       
       - path: /api/users
         pathType: Prefix
@@ -67,7 +67,7 @@ spec:
           service:
             name: calculator-service
             port:
-              number: 3007
+              number: 3003
       
       - path: /api/chat
         pathType: Prefix
@@ -83,7 +83,7 @@ spec:
           service:
             name: email-service
             port:
-              number: 3009
+              number: 3008
       
       - path: /api/admin
         pathType: Prefix

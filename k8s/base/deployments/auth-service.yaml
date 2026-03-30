@@ -17,26 +17,14 @@ spec:
         app: auth-service
         tier: backend
     spec:
-      serviceAccountName: fintechops-secrets-sa
       imagePullSecrets:
         - name: ecr-secret
-      volumes:
-        - name: secrets-store
-          csi:
-            driver: secrets-store.csi.k8s.io
-            readOnly: true
-            volumeAttributes:
-              secretProviderClass: fintechops-secrets
       containers:
         - name: auth-service
           image: 836548370285.dkr.ecr.us-east-1.amazonaws.com/fintechops:auth-service-latest
           imagePullPolicy: Always
           ports:
             - containerPort: 3001
-          volumeMounts:
-            - name: secrets-store
-              mountPath: /mnt/secrets-store
-              readOnly: true
           envFrom:
             - configMapRef:
                 name: fintechops-config

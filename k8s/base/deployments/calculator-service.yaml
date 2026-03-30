@@ -32,6 +32,8 @@ spec:
                 configMapKeyRef:
                   name: fintechops-config
                   key: NODE_ENV
+            - name: PORT
+              value: "3003"
             - name: REDIS_URL
               valueFrom:
                 secretKeyRef:

@@ -19,17 +19,15 @@ echo "=========================================="
 eksctl create cluster \
   --name "${CLUSTER_NAME}" \
   --region "${AWS_REGION}" \
-  --version 1.29 \
+  --version 1.34 \
   --nodegroup-name fintechops-nodes \
-  --node-type t3.large \
+  --node-type m7i-flex.large \
   --nodes 3 \
-  --nodes-min 2 \
+  --nodes-min 3 \
   --nodes-max 6 \
   --managed \
   --asg-access \
   --with-oidc \
-  --ssh-access \
-  --ssh-public-key ~/.ssh/id_rsa.pub \
   --tags "Project=fintechops,Environment=production"
 
 echo ""

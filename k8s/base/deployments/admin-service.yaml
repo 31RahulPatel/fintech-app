@@ -32,16 +32,32 @@ spec:
                 configMapKeyRef:
                   name: fintechops-config
                   key: NODE_ENV
+            - name: PORT
+              value: "3010"
             - name: MONGODB_URI
               valueFrom:
                 secretKeyRef:
                   name: fintechops-secrets
                   key: MONGODB_URI
-            - name: POSTGRESQL_URI
+            - name: POSTGRES_DB
+              value: "fintechops"
+            - name: POSTGRES_USER
+              value: "fintechops"
+            - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: fintechops-secrets
-                  key: POSTGRESQL_URI
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: fintechops-config
+                  key: POSTGRES_HOST
+            - name: POSTGRES_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: fintechops-config
+                  key: POSTGRES_PORT
             - name: REDIS_URL
               valueFrom:
                 secretKeyRef:

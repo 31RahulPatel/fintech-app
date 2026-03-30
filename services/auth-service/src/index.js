@@ -2,8 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const mongoose = require('mongoose');
-const { Sequelize } = require('sequelize');
 const routes = require('./routes');
 const logger = require('./utils/logger');
 
@@ -15,7 +13,7 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-// Health check
+// Health check - MUST be database-independent
 app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'healthy', 
@@ -28,48 +26,57 @@ app.get('/health', (req, res) => {
 // Routes
 app.use('/', routes);
 
-// MongoDB connection with timeout configurations
-const mongoOptions = {
-  serverSelectionTimeoutMS: 30000, // 30 seconds
-  socketTimeoutMS: 45000, // 45 seconds
-  connectTimeoutMS: 30000, // 30 seconds
-  maxPoolSize: 10,
-  minPoolSize: 2,
-  maxIdleTimeMS: 30000,
-  waitQueueTimeoutMS: 30000,
-  retryWrites: true,
-  retryReads: true
-};
+// Start server first, then connect to databases
+const server = app.listen(PORT, () => {
+  logger.info(`Auth Service running on port ${PORT}`);
+  
+  // Connect to databases after server starts (non-blocking)
+  connectDatabases();
+});
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/fintechops', mongoOptions)
-  .then(() => logger.info('MongoDB connected with timeout configurations'))
-  .catch(err => logger.error('MongoDB connection error:', err));
-
-// PostgreSQL connection
-const sequelize = new Sequelize(
-  process.env.POSTGRES_DB || 'fintechops',
-  process.env.POSTGRES_USER || 'postgres',
-  process.env.POSTGRES_PASSWORD || 'postgres',
-  {
-    host: process.env.POSTGRES_HOST || 'localhost',
-    port: process.env.POSTGRES_PORT || 5432,
-    dialect: 'postgres',
-    logging: msg => logger.debug(msg),
-    pool: {
-      max: 10,
-      min: 2,
-      acquire: 30000,
-      idle: 10000
+// Database connections (async, non-blocking)
+async function connectDatabases() {
+  try {
+    // MongoDB connection
+    if (process.env.MONGODB_URI) {
+      const mongoose = require('mongoose');
+      const mongoOptions = {
+        serverSelectionTimeoutMS: 30000,
+        socketTimeoutMS: 45000,
+        connectTimeoutMS: 30000,
+        maxPoolSize: 10,
+        minPoolSize: 2,
+        maxIdleTimeMS: 30000,
+        waitQueueTimeoutMS: 30000,
+        retryWrites: true,
+        retryReads: true
+      };
+      
+      await mongoose.connect(process.env.MONGODB_URI, mongoOptions);
+      logger.info('MongoDB connected');
     }
+    
+    // PostgreSQL connection
+    if (process.env.POSTGRESQL_URI) {
+      const { Sequelize } = require('sequelize');
+      const sequelize = new Sequelize(process.env.POSTGRESQL_URI, {
+        logging: msg => logger.debug(msg),
+        pool: {
+          max: 10,
+          min: 2,
+          acquire: 30000,
+          idle: 10000
+        }
+      });
+      
+      await sequelize.authenticate();
+      logger.info('PostgreSQL connected');
+      app.set('sequelize', sequelize);
+    }
+  } catch (err) {
+    logger.error('Database connection error (non-fatal):', err.message);
   }
-);
-
-sequelize.authenticate()
-  .then(() => logger.info('PostgreSQL connected'))
-  .catch(err => logger.error('PostgreSQL connection error:', err));
-
-// Global sequelize instance
-app.set('sequelize', sequelize);
+}
 
 // Error handler
 app.use((err, req, res, next) => {
@@ -79,8 +86,4 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
-  logger.info(`Auth Service running on port ${PORT}`);
-});
-
-module.exports = { app, sequelize };
+module.exports = { app, server };
