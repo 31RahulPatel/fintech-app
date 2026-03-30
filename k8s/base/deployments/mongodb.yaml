@@ -20,6 +20,8 @@ spec:
         app: mongodb
         tier: database
     spec:
+      imagePullSecrets:
+        - name: ecr-secret
       containers:
         - name: mongodb
           image: mongo:7.0
@@ -63,6 +65,8 @@ spec:
     - metadata:
         name: mongodb-data
       spec:
+      imagePullSecrets:
+        - name: ecr-secret
         accessModes: ["ReadWriteOnce"]
         storageClassName: gp3
         resources:

@@ -19,9 +19,11 @@ spec:
         prometheus.io/port: "3009"
         prometheus.io/path: "/metrics"
     spec:
+      imagePullSecrets:
+        - name: ecr-secret
       containers:
         - name: admin-service
-          image: fintechops/admin-service:latest
+          image: 836548370285.dkr.ecr.us-east-1.amazonaws.com/fintechops:admin-service-latest
           ports:
             - containerPort: 3009
           env:

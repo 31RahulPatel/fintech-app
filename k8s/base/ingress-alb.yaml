@@ -1,0 +1,118 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fintechops-alb
+  namespace: fintechops
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: '30'
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: '5'
+    alb.ingress.kubernetes.io/healthy-threshold-count: '2'
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: '3'
+spec:
+  rules:
+  - http:
+      paths:
+      # Frontend - Default route
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 80
+      
+      # API Gateway - Main API entry point
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway
+            port:
+              number: 3000
+      
+      # Auth Service
+      - path: /auth
+        pathType: Prefix
+        backend:
+          service:
+            name: auth-service
+            port:
+              number: 3001
+      
+      # User Service
+      - path: /users
+        pathType: Prefix
+        backend:
+          service:
+            name: user-service
+            port:
+              number: 3002
+      
+      # Market Service
+      - path: /market
+        pathType: Prefix
+        backend:
+          service:
+            name: market-service
+            port:
+              number: 3004
+      
+      # News Service
+      - path: /news
+        pathType: Prefix
+        backend:
+          service:
+            name: news-service
+            port:
+              number: 3005
+      
+      # Blog Service
+      - path: /blog
+        pathType: Prefix
+        backend:
+          service:
+            name: blog-service
+            port:
+              number: 3006
+      
+      # Calculator Service
+      - path: /calculators
+        pathType: Prefix
+        backend:
+          service:
+            name: calculator-service
+            port:
+              number: 3007
+      
+      # Chatbot Service
+      - path: /chat
+        pathType: Prefix
+        backend:
+          service:
+            name: chatbot-service
+            port:
+              number: 3008
+      
+      # Email Service
+      - path: /email
+        pathType: Prefix
+        backend:
+          service:
+            name: email-service
+            port:
+              number: 3009
+      
+      # Admin Service
+      - path: /admin
+        pathType: Prefix
+        backend:
+          service:
+            name: admin-service
+            port:
+              number: 3010

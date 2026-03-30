@@ -17,6 +17,8 @@ spec:
         app: frontend
         tier: frontend
     spec:
+      imagePullSecrets:
+        - name: ecr-secret
       containers:
         - name: frontend
           image: 836548370285.dkr.ecr.us-east-1.amazonaws.com/fintechops:frontend-latest

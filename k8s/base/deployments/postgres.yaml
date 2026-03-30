@@ -20,6 +20,8 @@ spec:
         app: postgres
         tier: database
     spec:
+      imagePullSecrets:
+        - name: ecr-secret
       containers:
         - name: postgres
           image: postgres:16-alpine
@@ -67,6 +69,8 @@ spec:
     - metadata:
         name: postgres-data
       spec:
+      imagePullSecrets:
+        - name: ecr-secret
         accessModes: ["ReadWriteOnce"]
         storageClassName: gp3
         resources:

@@ -20,6 +20,8 @@ spec:
         app: redis
         tier: database
     spec:
+      imagePullSecrets:
+        - name: ecr-secret
       containers:
         - name: redis
           image: redis:7-alpine
@@ -61,6 +63,8 @@ spec:
     - metadata:
         name: redis-data
       spec:
+      imagePullSecrets:
+        - name: ecr-secret
         accessModes: ["ReadWriteOnce"]
         storageClassName: gp3
         resources:

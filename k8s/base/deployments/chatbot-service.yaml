@@ -19,9 +19,11 @@ spec:
         prometheus.io/port: "3007"
         prometheus.io/path: "/metrics"
     spec:
+      imagePullSecrets:
+        - name: ecr-secret
       containers:
         - name: chatbot-service
-          image: fintechops/chatbot-service:latest
+          image: 836548370285.dkr.ecr.us-east-1.amazonaws.com/fintechops:chatbot-service-latest
           ports:
             - containerPort: 3007
           env:

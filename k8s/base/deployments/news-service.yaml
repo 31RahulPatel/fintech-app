@@ -19,9 +19,11 @@ spec:
         prometheus.io/port: "3005"
         prometheus.io/path: "/metrics"
     spec:
+      imagePullSecrets:
+        - name: ecr-secret
       containers:
         - name: news-service
-          image: fintechops/news-service:latest
+          image: 836548370285.dkr.ecr.us-east-1.amazonaws.com/fintechops:news-service-latest
           ports:
             - containerPort: 3005
           env:
