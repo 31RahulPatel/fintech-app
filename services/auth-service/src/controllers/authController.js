@@ -467,33 +467,19 @@ exports.cognitoLogin = async (req, res) => {
 
     const result = await cognitoService.signIn(email, password);
 
-    // Update or create local user
-    let user = await User.findOneAndUpdate(
+    // Update local user last login and get user data
+    const user = await User.findOneAndUpdate(
       { email },
       { lastLogin: new Date() },
       { new: true }
     );
 
-    // If user doesn't exist locally, create them (Cognito user with no local record)
     if (!user) {
-      logger.info(`Cognito user not found locally, creating local record: ${email}`);
-      try {
-        user = await User.create({
-          email,
-          password: '', // No local password for Cognito users
-          firstName: '',
-          lastName: '',
-          phone: '',
-          cognitoSub: result.userSub,
-          role: 'user',
-          isVerified: true, // Cognito users are verified
-          lastLogin: new Date()
-        });
-        logger.info(`Local user created for Cognito user: ${email}`);
-      } catch (createErr) {
-        logger.error(`Failed to create local user record: ${createErr.message}`);
-        return res.status(500).json({ error: 'Failed to create user account' });
-      }
+      logger.warn(`Cognito auth succeeded but user not found locally: ${email}`);
+      return res.status(400).json({ 
+        error: 'User account not found. Please sign up first.',
+        requiresSignup: true 
+      });
     }
 
     logger.info(`Cognito user logged in: ${email}`);
