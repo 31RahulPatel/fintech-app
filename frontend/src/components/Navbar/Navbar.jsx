@@ -87,9 +87,9 @@ const Navbar = () => {
                 onClick={() => setDropdownOpen(dropdownOpen === 'user' ? null : 'user')}
               >
                 <div className="user-avatar">
-                  {user?.profile?.firstName?.[0] || user?.email?.[0]?.toUpperCase() || 'U'}
+                  {(user?.profile?.firstName || user?.email || "U")[0]?.toUpperCase() || "U"}
                 </div>
-                <span className="user-name">{user?.profile?.firstName || user?.email?.split('@')[0] || 'User'}</span>
+                <span className="user-name">{user?.profile?.firstName || (user?.email ? user.email.split('@')[0] : "") || "User"}</span>
                 <FiChevronDown className={`dropdown-arrow ${dropdownOpen === 'user' ? 'open' : ''}`} />
               </button>
               

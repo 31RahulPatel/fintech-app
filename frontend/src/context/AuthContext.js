@@ -21,56 +21,79 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const checkAuth = async () => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         const response = await api.get('/auth/me');
-        setUser(response.data.user);
-        setIsAuthenticated(true);
-      } catch (error) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('idToken');
-        delete api.defaults.headers.common['Authorization'];
+        const userData = response?.data?.user || response?.data || null;
+        if (userData && typeof userData === 'object') {
+          setUser(userData);
+          setIsAuthenticated(true);
+        }
       }
+    } catch (error) {
+      console.warn('Auth check failed:', error);
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('idToken');
+      delete api.defaults.headers.common['Authorization'];
+      setUser(null);
+      setIsAuthenticated(false);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const login = async (email, password) => {
-    const response = await api.post('/auth/cognito/login', { email, password });
-    const { accessToken, refreshToken, idToken, user } = response.data;
-    
-    localStorage.removeItem('idToken');
-    localStorage.setItem('token', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
-    if (idToken) localStorage.setItem('idToken', idToken);
-    api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
-    
-    setUser(user);
-    setIsAuthenticated(true);
-    return user;
+    try {
+      const response = await api.post('/auth/cognito/login', { email, password });
+      const data = response?.data || {};
+      const { accessToken, refreshToken, idToken, user } = data;
+      
+      if (accessToken && user) {
+        localStorage.setItem('token', accessToken);
+        if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+        if (idToken) localStorage.setItem('idToken', idToken);
+        api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+        
+        setUser(user);
+        setIsAuthenticated(true);
+        return user;
+      }
+      throw new Error('Invalid login response');
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    }
   };
 
   const signup = async (userData) => {
     const response = await api.post('/auth/cognito/signup', userData);
-    return response.data;
+    return response?.data || {};
   };
 
   const confirmSignup = async (email, code) => {
-    const response = await api.post('/auth/cognito/confirm', { email, code });
-    const { accessToken, refreshToken, idToken, user } = response.data;
+    try {
+      const response = await api.post('/auth/cognito/confirm', { email, code });
+      const data = response?.data || {};
+      const { accessToken, refreshToken, idToken, user } = data;
 
-    localStorage.removeItem('idToken');
-    localStorage.setItem('token', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
-    if (idToken) localStorage.setItem('idToken', idToken);
-    api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+      if (accessToken && user) {
+        localStorage.setItem('token', accessToken);
+        if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+        if (idToken) localStorage.setItem('idToken', idToken);
+        api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
 
-    setUser(user);
-    setIsAuthenticated(true);
-    return user;
+        setUser(user);
+        setIsAuthenticated(true);
+        return user;
+      }
+      throw new Error('Invalid confirmation response');
+    } catch (error) {
+      console.error('Confirmation failed:', error);
+      throw error;
+    }
   };
 
   const logout = () => {
@@ -83,14 +106,15 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateUser = (userData) => {
+    if (!userData || typeof userData !== 'object') return;
     setUser(prev => {
-      if (!prev || !userData) return prev || null;
+      if (!prev) return userData;
       return { ...prev, ...userData };
     });
   };
 
   const value = {
-    user,
+    user: user || {},
     loading,
     isAuthenticated,
     login,
