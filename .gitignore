@@ -195,3 +195,6 @@ env/
 .instructions.md
 .prompt.md
 
+k8s/base/secrets.yaml
+k8s/base/secrets-manager-policy.json
+k8s/base/secrets-working.yaml
