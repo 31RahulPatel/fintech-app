@@ -46,6 +46,12 @@ A comprehensive microservices-based fintech application providing market data, f
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
+![CI/CD pipeline](cicd_pipeline.png)
+![CI/CD pipeline](cicd.png)
+![Deployment](deployment_architecture.png)
+![Home page](home.png)
+![bazarAI](Bazarai.png)
+![Calculators](calculator.png)
 
 ## 🚀 Tech Stack
 
